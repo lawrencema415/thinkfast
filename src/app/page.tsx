@@ -1,25 +1,24 @@
 'use client';
 
-import { useSSE } from '@/hooks/useSSE';
-import { useEffect, useState } from 'react';
+// import { useSSE } from '@/hooks/useSSE';
+import { useState } from 'react';
 
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useRouter } from 'next/navigation';
+// import { Label } from '@/components/ui/label';
+// import { useRouter } from 'next/navigation';
 import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardFooter,
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
 import { NavigationBar } from '@/components/navigation-bar';
 import { Footer } from '@/components/footer';
 import { useGame } from '@/hooks/use-game';
-import { useAuth } from '@/hooks/use-auth';
+// import { useAuth } from '@/hooks/use-auth';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -35,9 +34,8 @@ import { MusicWave } from '@/components/ui/music-wave';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Music, Users, Clock, Plus, ChevronRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { useWebSocket, useWebSocketListener } from '@/lib/websocket';
-import { useToast } from '@/hooks/use-toast';
-import { Room } from '@shared/schema';
+// import { useToast } from '@/hooks/use-toast';
+// import { Room } from '@shared/schema';
 import { ReadyToPlayModal } from '@/components/ready-to-play-modal';
 
 // Room creation form schema
@@ -63,21 +61,18 @@ const MIN_SONGS_PER_PLAYER = 1;
 const MAX_SONGS_PER_PLAYER = 5;
 
 export default function HomePage() {
-	const { user } = useAuth();
 	const { createRoomMutation, joinRoomMutation } = useGame();
 	const [activeTab, setActiveTab] = useState<string>('create');
-	const { sendMessage, connected } = useWebSocket();
-	const { toast } = useToast();
-	const [joiningRoom, setJoiningRoom] = useState<string | null>(null);
+	// const [joiningRoom, setJoiningRoom] = useState<string | null>(null);
 	const [showReadyToPlayModal, setShowReadyToPlayModal] = useState(false);
-	const router = useRouter();
+	// const router = useRouter();
 
 	// Listen for JOINED_ROOM response
-	useWebSocketListener('JOINED_ROOM', (payload: { roomId: string }) => {
-		if (joiningRoom) {
-			router.push(`/room/${joiningRoom}`);
-		}
-	});
+	// useWebSocketListener('JOINED_ROOM', (payload: { roomId: string }) => {
+	// 	if (joiningRoom) {
+	// 		router.push(`/room/${joiningRoom}`);
+	// 	}
+	// });
 
 	// Create room form
 	const createRoomForm = useForm<CreateRoomFormValues>({
@@ -98,14 +93,14 @@ export default function HomePage() {
 
 	const onCreateRoomSubmit = (data: CreateRoomFormValues) => {
 		createRoomMutation.mutate(data, {
-			onSuccess: (room: Room) => {
-				navigate(`/room/${room.code}`);
-			},
+			// onSuccess: (room: Room) => {
+			// navigate(`/room/${room.code}`);
+			// },
 		});
 	};
 
 	const onJoinRoomSubmit = (data: JoinRoomFormValues) => {
-		setJoiningRoom(data.roomCode);
+		// setJoiningRoom(data.roomCode);
 		joinRoomMutation.mutate(data.roomCode);
 	};
 

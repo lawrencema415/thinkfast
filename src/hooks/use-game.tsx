@@ -8,38 +8,57 @@ import {
 	useState,
 	useCallback,
 } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import {
+	useQuery,
+	useMutation,
+	UseMutationResult,
+} from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useWebSocket, useWebSocketListener } from '@/lib/websocket';
-import {
-	InsertRoom,
-	InsertSong,
-	GameState,
-	Song,
-	Room,
-	PlayerWithUser,
-	InsertGuess,
-} from '@shared/schema';
+import { useSSE } from '@/hooks/useSSE';
+import type { InsertRoom, GameState, Song, Room } from '../shared/schema';
 import { useRouter } from 'next/navigation';
+
+type SongInput = {
+	title: string;
+	artist: string;
+	albumArt: string;
+	genre: string;
+	sourceType: string;
+	sourceId: string;
+	previewUrl: string | null;
+};
+
+type DeleteSongResult = {
+	songId: number;
+};
+
+type GameMessage = {
+	type: string;
+	payload: Record<string, unknown>;
+};
 
 type GameContextType = {
 	gameState: GameState | null;
 	isLoading: boolean;
 	error: Error | null;
-	createRoomMutation: any;
-	joinRoomMutation: any;
-	leaveRoomMutation: any;
-	addSongMutation: any;
-	startGameMutation: any;
-	makeGuessMutation: any;
-	playAgainMutation: any;
-	endGameMutation: any;
+	createRoomMutation: UseMutationResult<
+		Room,
+		Error,
+		Omit<InsertRoom, 'hostId' | 'code'>
+	>;
+	joinRoomMutation: UseMutationResult<Room, Error, string>;
+	leaveRoomMutation: UseMutationResult<void, Error, void>;
+	addSongMutation: UseMutationResult<Song, Error, SongInput>;
+	startGameMutation: UseMutationResult<void, Error, void>;
+	makeGuessMutation: UseMutationResult<void, Error, string>;
+	playAgainMutation: UseMutationResult<void, Error, void>;
+	endGameMutation: UseMutationResult<void, Error, void>;
 	sendChatMessage: (message: string) => void;
 	controlPlayback: (action: 'play' | 'pause') => void;
-	makeGuessViaWebSocket: (guess: string) => void;
-	deleteSongMutation: any;
+	makeGuess: (guess: string) => void;
+	deleteSongMutation: UseMutationResult<DeleteSongResult, Error, number>;
 };
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -47,7 +66,7 @@ const GameContext = createContext<GameContextType | null>(null);
 export function GameProvider({ children }: { children: ReactNode }) {
 	const { toast } = useToast();
 	const { user } = useAuth();
-	const { sendMessage, connected } = useWebSocket();
+	const { isConnected, messages, sendMessage } = useSSE();
 	const [gameState, setGameState] = useState<GameState | null>(null);
 	const router = useRouter();
 
@@ -83,22 +102,33 @@ export function GameProvider({ children }: { children: ReactNode }) {
 		setGameState(fetchedGameState ?? null);
 	}, [fetchedGameState]);
 
-	// Listen for game state updates via WebSocket
-	useWebSocketListener('gameState', (payload: GameState) => {
-		setGameState(payload);
-	});
-
-	// Send authentication message when user logs in or WebSocket reconnects
+	// Listen for SSE messages
 	useEffect(() => {
-		if (user && connected) {
-			// Send authentication to WebSocket server
-			sendMessage({
-				type: 'authenticate',
-				payload: { userId: user.id },
-			});
-			console.log('Sent WebSocket authentication message');
+		if (messages.length > 0) {
+			const lastMessage = messages[messages.length - 1];
+			try {
+				const data = JSON.parse(lastMessage);
+				if (data.type === 'gameState') {
+					setGameState(data.payload);
+				}
+			} catch (error) {
+				console.error('Error parsing SSE message:', error);
+			}
 		}
-	}, [user, connected, sendMessage]);
+	}, [messages]);
+
+	// Send authentication message when user logs in
+	useEffect(() => {
+		if (user && isConnected) {
+			sendMessage(
+				JSON.stringify({
+					type: 'authenticate',
+					payload: { userId: user.id },
+				})
+			);
+			console.log('Sent SSE authentication message');
+		}
+	}, [user, isConnected, sendMessage]);
 
 	// Mutation to create a new room
 	const createRoomMutation = useMutation({
@@ -125,15 +155,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	// Mutation to join an existing room
 	const joinRoomMutation = useMutation({
 		mutationFn: async (roomCode: string) => {
-			// Send WebSocket message
-			sendMessage({
-				type: 'joinRoom',
-				payload: {
-					roomId: roomCode,
-				},
-			});
-			// Return the roomCode to maintain consistency with mutation type
-			return { roomCode };
+			const res = await apiRequest('POST', '/api/rooms/join', { roomCode });
+			return await res.json();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
@@ -156,22 +179,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
 			const isHost = user?.id === gameState.room.hostId;
 			const nextHost = gameState.players.find(
-				(p) => p.userId !== user?.id
+				(player) => player.userId !== user?.id
 			)?.userId;
 
 			const res = await apiRequest('POST', '/api/rooms/leave', {
 				roomId: gameState.room.id,
 				isHost,
 				nextHostId: isHost ? nextHost : undefined,
-			});
-
-			// Send WebSocket message to notify other players
-			sendMessage({
-				type: 'leaveRoom',
-				payload: {
-					roomId: gameState.room.id,
-					userId: user?.id,
-				},
 			});
 
 			return await res.json();
@@ -194,28 +208,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
 		},
 	});
 
-	// Mutation to add a song to the room
-	// const addSongMutation = useMutation({
-	// 	mutationFn: async (songData: Omit<InsertSong, 'roomId' | 'userId'>) => {
-	// 		const res = await apiRequest('POST', '/api/songs', songData);
-	// 		return await res.json();
-	// 	},
-	// 	onSuccess: (song: Song) => {
-	// 		queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
-	// 		toast({
-	// 			title: 'Song added',
-	// 			description: `"${song.title}" by ${song.artist} has been added to your songs`,
-	// 		});
-	// 	},
-	// 	onError: (error: Error) => {
-	// 		toast({
-	// 			title: 'Failed to add song',
-	// 			description: error.message,
-	// 			variant: 'destructive',
-	// 		});
-	// 	},
-	// });
-
 	const addSongMutation = useMutation({
 		mutationFn: async (songData: {
 			title: string;
@@ -231,18 +223,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 			}
 
 			console.log('Adding song:', songData);
-			// Send WebSocket message
-			sendMessage({
-				type: 'addSong',
-				payload: {
-					roomId: gameState.room.id,
-					song: songData,
-				},
+			const res = await apiRequest('POST', '/api/songs', {
+				...songData,
+				roomId: gameState.room.id,
 			});
-
-			// const res = await apiRequest('POST', '/api/songs', songData);
-			// return await res.json();
-			return songData;
+			return await res.json();
 		},
 		onSuccess: (song: Song) => {
 			queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
@@ -269,12 +254,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
 				console.log('Sending startGame WebSocket message:', {
 					roomId: gameState.room.id,
 				});
-				sendMessage({
-					type: 'startGame',
-					payload: {
-						roomId: gameState.room.id,
-					},
-				});
+				sendMessage(
+					JSON.stringify({
+						type: 'startGame',
+						payload: {
+							roomId: gameState.room.id,
+						},
+					})
+				);
 			}
 
 			return await res.json();
@@ -300,15 +287,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
 	// Mutation to make a guess
 	const makeGuessMutation = useMutation({
-		mutationFn: async (
-			guessData: Omit<InsertGuess, 'roomId' | 'userId' | 'songId'>
-		) => {
+		mutationFn: async (guess: string) => {
 			if (!gameState?.room?.id) {
 				throw new Error('Not in a game room');
 			}
 
 			const data = {
-				...guessData,
+				content: guess,
 				roomId: gameState.room.id,
 				songId: gameState.currentTrack?.id,
 			};
@@ -316,7 +301,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 			const res = await apiRequest('POST', '/api/guesses', data);
 			return await res.json();
 		},
-		onSuccess: (result) => {
+		onSuccess: () => {
 			// No toast here as feedback will come through the game state update
 		},
 		onError: (error: Error) => {
@@ -350,75 +335,69 @@ export function GameProvider({ children }: { children: ReactNode }) {
 		},
 	});
 
-	// Function to send a chat message via WebSocket
-	const sendChatMessage = useCallback(
-		(message: string) => {
-			if (!gameState?.room?.id) {
-				toast({
-					title: 'Cannot send message',
-					description: 'You are not in a game room',
-					variant: 'destructive',
-				});
-				return;
-			}
-
-			sendMessage({
-				type: 'chat',
-				payload: {
-					roomId: gameState.room.id,
-					content: message,
-					type: 'chat',
-				},
-			});
-		},
-		[gameState?.room?.id, sendMessage, toast]
-	);
-
-	// Function to control game playback (play/pause)
+	// Function to control playback
 	const controlPlayback = useCallback(
 		(action: 'play' | 'pause') => {
 			if (!gameState?.room?.id) {
-				toast({
-					title: 'Cannot control playback',
-					description: 'You are not in a game room',
-					variant: 'destructive',
-				});
+				console.warn('Not in a game room');
 				return;
 			}
 
-			sendMessage({
+			const message: GameMessage = {
 				type: 'playback',
 				payload: {
 					roomId: gameState.room.id,
 					action,
-				},
-			});
+				} as Record<string, unknown>,
+			};
+
+			sendMessage(JSON.stringify(message));
 		},
-		[gameState?.room?.id, sendMessage, toast]
+		[gameState?.room?.id, sendMessage]
 	);
 
-	// Function to submit a guess via WebSocket instead of HTTP
-	const makeGuessViaWebSocket = useCallback(
-		(guess: string) => {
-			if (!gameState?.room?.id || !gameState.currentTrack?.id) {
-				toast({
-					title: 'Cannot make guess',
-					description: 'No active song is playing',
-					variant: 'destructive',
-				});
+	// Function to send chat messages
+	const sendChatMessage = useCallback(
+		(content: string) => {
+			if (!gameState?.room?.id || !user?.id) {
+				console.warn('Not in a game room or not authenticated');
 				return;
 			}
 
-			sendMessage({
+			const message: GameMessage = {
+				type: 'chat',
+				payload: {
+					roomId: gameState.room.id,
+					userId: user.id,
+					content,
+				} as Record<string, unknown>,
+			};
+
+			sendMessage(JSON.stringify(message));
+		},
+		[gameState?.room?.id, user?.id, sendMessage]
+	);
+
+	// Function to make a guess
+	const makeGuess = useCallback(
+		(guess: string) => {
+			if (!gameState?.room?.id || !user?.id) {
+				console.warn('Not in a game room or not authenticated');
+				return;
+			}
+
+			const message: GameMessage = {
 				type: 'guess',
 				payload: {
 					roomId: gameState.room.id,
-					songId: gameState.currentTrack.id,
-					content: guess,
-				},
-			});
+					userId: user.id,
+					guess,
+				} as Record<string, unknown>,
+			};
+
+			sendMessage(JSON.stringify(message));
 		},
-		[gameState?.room?.id, gameState?.currentTrack?.id, sendMessage, toast]
+		[gameState?.room?.id, user?.id, sendMessage]
 	);
 
 	// Mutation to end the game and delete the room
@@ -457,14 +436,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
 			}
 
 			// Send WebSocket message
-			sendMessage({
-				type: 'removeSong',
-				payload: {
-					roomId: gameState.room.id,
-					songId,
-					userId: user?.id,
-				},
-			});
+			// TODO: Uncomment here and fix with SSE
+			// sendMessage({
+			// 	type: 'removeSong',
+			// 	payload: {
+			// 		roomId: gameState.room.id,
+			// 		songId,
+			// 		userId: user?.id,
+			// 	},
+			// });
 
 			// Return the songId for success handling
 			return { songId };
@@ -485,30 +465,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
 		},
 	});
 
-	// Add deleteSongMutation to the context value
-	return (
-		<GameContext.Provider
-			value={{
-				gameState,
-				isLoading,
-				error,
-				createRoomMutation,
-				joinRoomMutation,
-				leaveRoomMutation,
-				addSongMutation,
-				deleteSongMutation, // Add this line
-				startGameMutation,
-				makeGuessMutation,
-				playAgainMutation,
-				endGameMutation, // Add this line
-				sendChatMessage,
-				controlPlayback,
-				makeGuessViaWebSocket,
-			}}
-		>
-			{children}
-		</GameContext.Provider>
-	);
+	const value: GameContextType = {
+		gameState,
+		isLoading,
+		error,
+		createRoomMutation,
+		joinRoomMutation,
+		leaveRoomMutation,
+		addSongMutation,
+		startGameMutation,
+		makeGuessMutation,
+		playAgainMutation,
+		endGameMutation,
+		sendChatMessage,
+		controlPlayback,
+		makeGuess,
+		deleteSongMutation,
+	};
+
+	return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
 
 export function useGame() {
