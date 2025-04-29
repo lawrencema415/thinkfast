@@ -1,3 +1,5 @@
+'use client';
+
 import {
 	createContext,
 	ReactNode,
@@ -20,7 +22,7 @@ import {
 	PlayerWithUser,
 	InsertGuess,
 } from '@shared/schema';
-import { useLocation } from 'wouter';
+import { useRouter } from 'next/navigation';
 
 type GameContextType = {
 	gameState: GameState | null;
@@ -47,7 +49,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	const { user } = useAuth();
 	const { sendMessage, connected } = useWebSocket();
 	const [gameState, setGameState] = useState<GameState | null>(null);
-	const [, navigate] = useLocation();
+	const router = useRouter();
 
 	// Fetch current game state if the user is in a room
 	const {
@@ -181,7 +183,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 				title: 'Left room',
 				description: 'You have left the game room',
 			});
-			navigate('/');
+			router.push('/');
 		},
 		onError: (error: Error) => {
 			toast({
@@ -449,38 +451,38 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
 	// Add this mutation before the return statement
 	const deleteSongMutation = useMutation({
-	    mutationFn: async (songId: number) => {
-	        if (!gameState?.room?.id) {
-	            throw new Error('Not in a game room');
-	        }
-	
-	        // Send WebSocket message
-	        sendMessage({
-	            type: 'removeSong',
-	            payload: {
-	                roomId: gameState.room.id,
-	                songId,
-	                userId: user?.id,
-	            },
-	        });
-	
-	        // Return the songId for success handling
-	        return { songId };
-	    },
-	    onSuccess: () => {
-	        queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
-	        toast({
-	            title: 'Song removed',
-	            description: 'The song has been removed from your queue',
-	        });
-	    },
-	    onError: (error: Error) => {
-	        toast({
-	            title: 'Failed to remove song',
-	            description: error.message,
-	            variant: 'destructive',
-	        });
-	    },
+		mutationFn: async (songId: number) => {
+			if (!gameState?.room?.id) {
+				throw new Error('Not in a game room');
+			}
+
+			// Send WebSocket message
+			sendMessage({
+				type: 'removeSong',
+				payload: {
+					roomId: gameState.room.id,
+					songId,
+					userId: user?.id,
+				},
+			});
+
+			// Return the songId for success handling
+			return { songId };
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
+			toast({
+				title: 'Song removed',
+				description: 'The song has been removed from your queue',
+			});
+		},
+		onError: (error: Error) => {
+			toast({
+				title: 'Failed to remove song',
+				description: error.message,
+				variant: 'destructive',
+			});
+		},
 	});
 
 	// Add deleteSongMutation to the context value

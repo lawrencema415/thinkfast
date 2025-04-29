@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
-import { useLocation } from 'wouter';
 import { useState } from 'react';
 import { Users, Clock } from 'lucide-react';
 import { useGame } from '@/hooks/use-game';
 import { Room } from '@shared/schema';
+import { useRouter } from 'next/navigation';
 
 interface ReadyToPlayModalProps {
 	isOpen: boolean;
@@ -24,17 +24,18 @@ export function ReadyToPlayModal({
 	onOpenChange,
 }: ReadyToPlayModalProps) {
 	const { user } = useAuth();
-	const [, navigate] = useLocation();
 	const { createRoomMutation, joinRoomMutation } = useGame();
 	const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
 	const [songsPerPlayer, setSongsPerPlayer] = useState(3);
 	const [secondsPerSong, setSecondsPerSong] = useState(10);
 	const [roomCode, setRoomCode] = useState('');
+	const router = useRouter();
 
-	if (!user) {
-		navigate('/auth');
-		return null;
-	}
+	// TODO: REMOVE COMMENTS ONCE AUTH & PAGE IS WORKING
+	// if (!user) {
+	// 	router.push('/auth');
+	// 	return null;
+	// }
 
 	const handleCreateRoom = () => {
 		createRoomMutation.mutate(
@@ -46,7 +47,7 @@ export function ReadyToPlayModal({
 				onSuccess: (room: Room) => {
 					onOpenChange(false);
 					setTimeout(() => {
-						navigate(`/room/${room.code}`);
+						router.push(`/room/${room.code}`);
 					}, 150);
 				},
 			}
@@ -58,7 +59,7 @@ export function ReadyToPlayModal({
 			onSuccess: () => {
 				onOpenChange(false);
 				setTimeout(() => {
-					navigate(`/room/${roomCode}`);
+					router.push(`/room/${roomCode}`);
 				}, 150);
 			},
 		});

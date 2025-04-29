@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { useLocation, Link } from 'wouter';
+import Link from 'next/link';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
 	DropdownMenu,
@@ -20,18 +20,21 @@ import {
 	UserIcon,
 	LogOutIcon,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function NavigationBar() {
 	const { user, logoutMutation } = useAuth();
-	const [location] = useLocation();
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const router = useRouter();
 
 	const handleLogout = () => {
 		logoutMutation.mutate();
 	};
 
 	const isAuthenticated = !!user;
-	const isInGameRoom = location.startsWith('/room/');
+	// const isInGameRoom = location.startsWith('/room/');
+	// TODO: FIX THIS
+	const isInGameRoom = false;
 
 	return (
 		<header className='bg-dark shadow-lg'>
