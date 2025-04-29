@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 export const useSocket = () => {
@@ -6,52 +6,56 @@ export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const initSocket = async () => {
-      try {
-        // Initialize socket connection
-        await fetch('/api/socket');
-        
-        const socketInstance = io('', {
-          path: '/api/socket',
-          transports: ['websocket', 'polling'],
-          autoConnect: true
-        });
+    // Determine the base URL based on environment
+    const baseURL = process.env.NODE_ENV === 'production' 
+      ? 'https://thinkfast-bice.vercel.app' // Production URL
+      : 'http://localhost:3000'; // Development URL
+    
+    // Initialize socket connection
+    const socketInstance = io(baseURL, {
+      path: '/api/socket',
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+    });
 
-        socketInstance.on('connect', () => {
-          console.log('Connected to WebSocket');
-          setIsConnected(true);
-        });
+    // Set up event listeners
+    socketInstance.on('connect', () => {
+      console.log('Socket connected:', socketInstance.id);
+      setIsConnected(true);
+    });
 
-        socketInstance.on('connect_error', (error) => {
-          console.error('Socket connection error:', error);
-        });
+    socketInstance.on('disconnect', () => {
+      console.log('Socket disconnected');
+      setIsConnected(false);
+    });
 
-        socketInstance.on('disconnect', () => {
-          console.log('Disconnected from WebSocket');
-          setIsConnected(false);
-        });
+    socketInstance.on('connect_error', (err) => {
+      console.error('Connection error:', err.message);
+      setIsConnected(false);
+    });
 
-        setSocket(socketInstance);
-      } catch (error) {
-        console.error('Failed to initialize socket:', error);
-      }
-    };
+    // Save socket instance
+    setSocket(socketInstance);
 
-    initSocket();
-
+    // Clean up on unmount
     return () => {
-      if (socket) {
-        socket.disconnect();
-      }
+      socketInstance.disconnect();
     };
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sendMessage = useCallback((message: any) => {
-    if (socket) {
-      socket.emit('message', message);
-    }
-  }, [socket]);
+  // Function to send messages
+  const sendMessage = useCallback(
+    (message: string) => {
+      if (socket && isConnected) {
+        socket.emit('message', message);
+      } else {
+        console.warn('Cannot send message: Socket not connected');
+      }
+    },
+    [socket, isConnected]
+  );
 
   return { socket, isConnected, sendMessage };
 };

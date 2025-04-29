@@ -1,50 +1,48 @@
 import { Server as SocketIOServer } from 'socket.io';
-import type { NextApiRequest } from 'next';
-import type { Server as NetServer } from 'http';
-import type { NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export type NextApiResponseWithSocket = NextApiResponse & {
-  socket: {
-    server: NetServer & {
-      io?: SocketIOServer;
-    };
-  };
-};
-
-const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
-  if (res.socket.server.io) {
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Check if socket.io server is already initialized
+  if ((res.socket as any).server.io) {
     console.log('Socket is already running');
     res.end();
     return;
   }
 
-  console.log('Socket is initializing');
-  const io = new SocketIOServer(res.socket.server, {
+  console.log('Setting up socket');
+  const io = new SocketIOServer((res.socket as any).server, {
     path: '/api/socket',
     addTrailingSlash: false,
-    transports: ['websocket', 'polling']
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST'],
+    },
   });
-  res.socket.server.io = io;
 
-  io.on('connection', socket => {
-    console.log('Client connected');
+  // Store the socket.io server instance
+  (res.socket as any).server.io = io;
+
+  // Socket.IO event handlers
+  io.on('connection', (socket) => {
+    console.log('Client connected:', socket.id);
     
-    socket.on('message', msg => {
-      io.emit('message', msg);
+    socket.on('message', (data) => {
+      console.log('Message received:', data);
+      // Echo the message back to the client
+      socket.emit('message', `Server received: ${data}`);
     });
 
     socket.on('disconnect', () => {
-      console.log('Client disconnected');
+      console.log('Client disconnected:', socket.id);
     });
   });
 
   res.end();
-};
+}
 
+// Add this to ensure the API route is properly handled by Next.js
 export const config = {
   api: {
     bodyParser: false,
   },
 };
-
-export default SocketHandler;
