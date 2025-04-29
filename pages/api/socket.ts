@@ -1,7 +1,12 @@
 import { Server as SocketIOServer } from 'socket.io';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
+  if (req.method !== 'GET') {
+    res.status(405).end();
+    return;
+  }
+
   // Check if socket.io server is already initialized
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((res.socket as any).server.io) {
@@ -15,10 +20,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const io = new SocketIOServer((res.socket as any).server, {
     path: '/api/socket',
     addTrailingSlash: false,
+    transports: ['polling', 'websocket'], // Explicitly define transports
     cors: {
       origin: '*',
       methods: ['GET', 'POST'],
+      credentials: true
     },
+    pingTimeout: 60000, // Increase timeout values
+    pingInterval: 25000
   });
 
   // Store the socket.io server instance
@@ -38,14 +47,18 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);
     });
+
+    // Send an initial message to confirm connection
+    socket.emit('connected', { status: 'connected', id: socket.id });
   });
 
   res.end();
 }
 
-// Add this to ensure the API route is properly handled by Next.js
 export const config = {
   api: {
     bodyParser: false,
   },
 };
+
+export default SocketHandler;
