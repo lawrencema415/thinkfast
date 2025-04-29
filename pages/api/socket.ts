@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   // Check if socket.io server is already initialized
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((res.socket as any).server.io) {
     console.log('Socket is already running');
     res.end();
@@ -10,6 +11,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   console.log('Setting up socket');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const io = new SocketIOServer((res.socket as any).server, {
     path: '/api/socket',
     addTrailingSlash: false,
@@ -20,6 +22,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 
   // Store the socket.io server instance
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (res.socket as any).server.io = io;
 
   // Socket.IO event handlers
