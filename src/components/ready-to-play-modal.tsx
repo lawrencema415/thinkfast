@@ -13,6 +13,7 @@ import { Users, Clock } from 'lucide-react';
 import { useGame } from '@/hooks/use-game';
 import { Room } from '@shared/schema';
 import { useRouter } from 'next/navigation';
+import { useSSE } from '@/hooks/useSSE';
 
 interface ReadyToPlayModalProps {
 	isOpen: boolean;
@@ -37,21 +38,22 @@ export function ReadyToPlayModal({
 	// 	return null;
 	// }
 
-	const handleCreateRoom = () => {
-		createRoomMutation.mutate(
-			{
+	const { createRoom } = useSSE();
+
+	const handleCreateRoom = async () => {
+		try {
+			const room = await createRoom({
 				songsPerPlayer,
 				timePerSong: secondsPerSong,
-			},
-			{
-				onSuccess: (room: Room) => {
-					onOpenChange(false);
-					setTimeout(() => {
-						router.push(`/room/${room.code}`);
-					}, 150);
-				},
-			}
-		);
+			});
+			
+			onOpenChange(false);
+			setTimeout(() => {
+				router.push(`/room/${room.code}`);
+			}, 150);
+		} catch (error) {
+			console.error('Error creating room:', error);
+		}
 	};
 
 	const handleJoinRoom = () => {
