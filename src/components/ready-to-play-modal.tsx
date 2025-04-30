@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/use-auth';
+// import { useAuth } from '@/hooks/use-auth';
 import { useState } from 'react';
 import { Users, Clock } from 'lucide-react';
 import { useGame } from '@/hooks/use-game';
@@ -23,7 +23,7 @@ export function ReadyToPlayModal({
 	isOpen,
 	onOpenChange,
 }: ReadyToPlayModalProps) {
-	const { user } = useAuth();
+	// const { user } = useAuth();
 	const { createRoomMutation, joinRoomMutation } = useGame();
 	const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
 	const [songsPerPlayer, setSongsPerPlayer] = useState(3);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { storage, getSession } from "../../storage";
+import { storage, getSession } from "../storage";
 
 export async function GET() {
   try {

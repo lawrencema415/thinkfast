@@ -18,7 +18,7 @@ import {
 import { NavigationBar } from '@/components/navigation-bar';
 import { Footer } from '@/components/footer';
 import { useGame } from '@/hooks/use-game';
-// import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -40,12 +40,14 @@ import { ReadyToPlayModal } from '@/components/ready-to-play-modal';
 
 // Room creation form schema
 const createRoomSchema = z.object({
+	username: z.string().min(3, 'Username must be at least 3 characters'),
 	songsPerPlayer: z.number().min(1).max(5),
 	timePerSong: z.number().min(5).max(15),
 });
 
 // Join room form schema
 const joinRoomSchema = z.object({
+	username: z.string().min(3, 'Username must be at least 3 characters'),
 	roomCode: z.string().min(4).max(10),
 });
 
@@ -62,6 +64,7 @@ const MAX_SONGS_PER_PLAYER = 5;
 
 export default function HomePage() {
 	const { createRoomMutation, joinRoomMutation } = useGame();
+	const { createGuestUserMutation } = useAuth();
 	const [activeTab, setActiveTab] = useState<string>('create');
 	// const [joiningRoom, setJoiningRoom] = useState<string | null>(null);
 	const [showReadyToPlayModal, setShowReadyToPlayModal] = useState(false);
@@ -78,6 +81,7 @@ export default function HomePage() {
 	const createRoomForm = useForm<CreateRoomFormValues>({
 		resolver: zodResolver(createRoomSchema),
 		defaultValues: {
+			username: '',
 			songsPerPlayer: DEFAULT_SONGS_PER_PLAYER,
 			timePerSong: DEFAULT_SECONDS_PER_SONG,
 		},
@@ -87,21 +91,27 @@ export default function HomePage() {
 	const joinRoomForm = useForm<JoinRoomFormValues>({
 		resolver: zodResolver(joinRoomSchema),
 		defaultValues: {
+			username: '',
 			roomCode: '',
 		},
 	});
 
-	const onCreateRoomSubmit = (data: CreateRoomFormValues) => {
-		createRoomMutation.mutate(data, {
-			// onSuccess: (room: Room) => {
-			// navigate(`/room/${room.code}`);
-			// },
-		});
+	const onCreateRoomSubmit = async (data: CreateRoomFormValues) => {
+		// First create a guest user
+		const { username, ...roomData } = data;
+		await createGuestUserMutation.mutateAsync({ username });
+
+		// Then create the room
+		createRoomMutation.mutate(roomData);
 	};
 
-	const onJoinRoomSubmit = (data: JoinRoomFormValues) => {
-		// setJoiningRoom(data.roomCode);
-		joinRoomMutation.mutate(data.roomCode);
+	const onJoinRoomSubmit = async (data: JoinRoomFormValues) => {
+		// First create a guest user
+		const { username, roomCode } = data;
+		await createGuestUserMutation.mutateAsync({ username });
+
+		// Then join the room
+		joinRoomMutation.mutate(roomCode);
 	};
 
 	return (
@@ -221,6 +231,30 @@ export default function HomePage() {
 													)}
 													className='space-y-6'
 												>
+													<FormField
+														control={createRoomForm.control}
+														name='username'
+														render={({ field }) => (
+															<FormItem>
+																<FormLabel>Username</FormLabel>
+																<FormControl>
+																	<Input
+																		placeholder='Enter your username'
+																		className='bg-gray-700'
+																		{...field}
+																		onChange={(e) => {
+																			field.onChange(e.target.value);
+																		}}
+																	/>
+																</FormControl>
+																<FormDescription>
+																	Enter a username to identify yourself
+																</FormDescription>
+																<FormMessage />
+															</FormItem>
+														)}
+													/>
+
 													<FormField
 														control={createRoomForm.control}
 														name='songsPerPlayer'
@@ -346,6 +380,30 @@ export default function HomePage() {
 													onSubmit={joinRoomForm.handleSubmit(onJoinRoomSubmit)}
 													className='space-y-6'
 												>
+													<FormField
+														control={joinRoomForm.control}
+														name='username'
+														render={({ field }) => (
+															<FormItem>
+																<FormLabel>Username</FormLabel>
+																<FormControl>
+																	<Input
+																		placeholder='Enter your username'
+																		className='bg-gray-700'
+																		{...field}
+																		onChange={(e) => {
+																			field.onChange(e.target.value);
+																		}}
+																	/>
+																</FormControl>
+																<FormDescription>
+																	Enter a username to identify yourself
+																</FormDescription>
+																<FormMessage />
+															</FormItem>
+														)}
+													/>
+
 													<FormField
 														control={joinRoomForm.control}
 														name='roomCode'

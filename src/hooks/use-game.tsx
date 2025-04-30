@@ -106,6 +106,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	useEffect(() => {
 		if (messages.length > 0) {
 			const lastMessage = messages[messages.length - 1];
+			// Skip connection status messages
+			if (lastMessage === 'Connected to SSE') {
+				return;
+			}
 			try {
 				const data = JSON.parse(lastMessage);
 				if (data.type === 'gameState') {
@@ -133,7 +137,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	// Mutation to create a new room
 	const createRoomMutation = useMutation({
 		mutationFn: async (roomData: Omit<InsertRoom, 'hostId' | 'code'>) => {
-			const res = await apiRequest('POST', '/api/rooms', roomData);
+			const res = await apiRequest('POST', '/api/rooms', {
+				action: 'create',
+				...roomData,
+				userId: user?.id,
+			});
 			return await res.json();
 		},
 		onSuccess: (room: Room) => {
@@ -155,7 +163,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	// Mutation to join an existing room
 	const joinRoomMutation = useMutation({
 		mutationFn: async (roomCode: string) => {
-			const res = await apiRequest('POST', '/api/rooms/join', { roomCode });
+			const res = await apiRequest('POST', '/api/rooms', {
+				action: 'join',
+				roomCode,
+				userId: user?.id,
+			});
 			return await res.json();
 		},
 		onSuccess: () => {
@@ -182,8 +194,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
 				(player) => player.userId !== user?.id
 			)?.userId;
 
-			const res = await apiRequest('POST', '/api/rooms/leave', {
+			const res = await apiRequest('POST', '/api/rooms', {
+				action: 'leave',
 				roomId: gameState.room.id,
+				userId: user?.id,
 				isHost,
 				nextHostId: isHost ? nextHost : undefined,
 			});
@@ -248,20 +262,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	// Mutation to start the game
 	const startGameMutation = useMutation({
 		mutationFn: async () => {
-			const res = await apiRequest('POST', '/api/game/start', {});
+			if (!gameState?.room?.id) {
+				throw new Error('Not in a game room');
+			}
+
+			const res = await apiRequest('POST', '/api/rooms', {
+				action: 'start',
+				roomId: gameState.room.id,
+				userId: user?.id,
+			});
 
 			if (gameState?.room?.id) {
 				console.log('Sending startGame WebSocket message:', {
 					roomId: gameState.room.id,
 				});
-				sendMessage(
-					JSON.stringify({
-						type: 'startGame',
-						payload: {
-							roomId: gameState.room.id,
-						},
-					})
-				);
 			}
 
 			return await res.json();

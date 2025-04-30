@@ -18,9 +18,15 @@ export async function GET(request: NextRequest) {
     
     // Broadcast to all connected clients
     clients.forEach(controller => {
-      controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ message: serverMessage })}\n\n`)
-      );
+      try {
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ message: serverMessage })}\n\n`)
+        );
+      } catch (e) {
+        // If we can't send, the client is probably gone
+        console.log('Error sending message to client:', e);
+        clients.delete(controller);
+      }
     });
     
     return NextResponse.json({ success: true });
@@ -46,13 +52,19 @@ export async function GET(request: NextRequest) {
       
       // Set up ping interval
       const pingInterval = setInterval(() => {
+        // Check if the controller is still in the clients set
+        if (!clients.has(controller)) {
+          clearInterval(pingInterval);
+          return;
+        }
+        
         try {
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ ping: new Date().toISOString() })}\n\n`)
           );
-        } catch (e: any) {
+        } catch (e) {
           // If we can't send, the client is probably gone
-          console.log(e);
+          console.log('Error sending ping to client:', e);
           clearInterval(pingInterval);
           clients.delete(controller);
         }
@@ -62,7 +74,6 @@ export async function GET(request: NextRequest) {
       (controller as any).pingIntervalId = pingInterval;
     },
     cancel(controller) {
-      // Fix: Access the controller directly
       // Clear the ping interval if it exists
       if ((controller as any).pingIntervalId) {
         clearInterval((controller as any).pingIntervalId);

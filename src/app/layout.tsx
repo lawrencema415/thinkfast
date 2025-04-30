@@ -1,5 +1,5 @@
 import './globals.css';
-import Providers from './providers';
+import { Providers } from './providers';
 
 export default function RootLayout({
 	children,
@@ -10,7 +10,9 @@ export default function RootLayout({
 		<html lang='en' className='dark'>
 			<body className='min-h-screen bg-background text-foreground'>
 				<Providers>
-					<main>{children}</main>
+					<div className='min-h-screen flex flex-col'>
+						<main>{children}</main>
+					</div>
 				</Providers>
 			</body>
 		</html>

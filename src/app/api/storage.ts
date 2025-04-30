@@ -388,9 +388,14 @@ export class MemStorage {
       throw error;
     }
   }
+
+  // Add this method to the MemStorage class
+  async getAllRooms(): Promise<Room[]> {
+    return Array.from(this.rooms.values());
+  }
 }
 
-// Create a singleton instance
+// Create and export a single instance of MemStorage
 export const storage = new MemStorage();
 
 // Session management for Next.js
