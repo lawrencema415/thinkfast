@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { eventHandlers } from '@/events/handlers';
 import { GameState, Player, Track } from '@shared/schema';
 
@@ -10,6 +10,7 @@ interface CreateRoomParams {
 export const useSSE = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const [messages, setMessages] = useState<string[]>([]);
 
   // Add createRoom function
   const createRoom = useCallback(async (params: CreateRoomParams) => {
@@ -135,6 +136,7 @@ export const useSSE = () => {
   return {
     isConnected,
     gameState,
-    createRoom
+    createRoom,
+    messages
   };
 };
