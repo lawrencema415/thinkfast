@@ -1,122 +1,92 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
-import { Room } from '@/shared/schema';
 
-// Define event types for type safety
-type GameEvent = {
-    type: 'playerJoined' | 'playerLeft' | 'gameStarted' | 'roundUpdate' | 'correctGuess' | 'gameEnded' | 'roomUpdate';
-    data: any;
-};
-
-// In-memory storage for rooms and clients
+// In-memory storage for connected clients and messages
 const encoder = new TextEncoder();
+// Fix: Use the correct controller type
 const clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
-const rooms = new Map<string, Room>();
-
-// Helper function to broadcast events to all clients
-function broadcastEvent(event: GameEvent) {
-    const eventString = `event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`;
-    clients.forEach(controller => {
-        try {
-            controller.enqueue(encoder.encode(eventString));
-        } catch (e) {
-            console.error('Failed to send event to client:', e);
-            clients.delete(controller);
-        }
-    });
-}
-
-// Helper function to create a new room
-function createRoom(hostId: number, songsPerPlayer: number, timePerSong: number): Room {
-    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const room: Room = {
-        id: rooms.size + 1, // Simple incremental ID
-        code: roomCode,
-        hostId,
-        songsPerPlayer,
-        timePerSong,
-        isActive: true,
-        isPlaying: false,
-        createdAt: new Date()
-    };
-    
-    rooms.set(roomCode, room);
-    return room;
-}
-
-// Helper function to get a room
-function getRoom(code: string): Room | undefined {
-    return rooms.get(code);
-}
+const messages: string[] = [];
 
 export async function GET(request: NextRequest) {
-    const url = new URL(request.url);
+  const url = new URL(request.url);
+  const message = url.searchParams.get('message');
+
+  // If there's a message parameter, broadcast it to all clients
+  if (message) {
+    const serverMessage = `Server received: ${message}`;
+    messages.push(serverMessage);
     
-    // Handle event broadcasting through query parameters
-    const eventType = url.searchParams.get('eventType');
-    const eventData = url.searchParams.get('eventData');
-    
-    if (eventType && eventData) {
+    // Broadcast to all connected clients
+    clients.forEach(controller => {
+      try {
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ message: serverMessage })}\n\n`)
+        );
+      } catch (e) {
+        // If we can't send, the client is probably gone
+        console.log('Error sending message to client:', e);
+        clients.delete(controller);
+      }
+    });
+    return NextResponse.json({ success: true });
+  }
+
+  // Otherwise, set up an SSE connection
+  const stream = new ReadableStream({
+    start(controller) {
+      // Send initial connection message
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify({ message: 'Connected to SSE' })}\n\n`)
+      );
+      
+      // Send all existing messages
+      messages.forEach(msg => {
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ message: msg })}\n\n`)
+        );
+      });
+      
+      // Add this client to our set
+      clients.add(controller);
+      
+      // Set up ping interval
+      const pingInterval = setInterval(() => {
+        // Check if the controller is still in the clients set
+        if (!clients.has(controller)) {
+          clearInterval(pingInterval);
+          return;
+        }
+        
         try {
-            const data = JSON.parse(eventData);
-            
-            // If this is a room creation event, create the room
-            if (eventType === 'roomUpdate' && data.room) {
-                const room = createRoom(
-                    data.room.hostId,
-                    data.room.songsPerPlayer,
-                    data.room.timePerSong
-                );
-                data.room = room;
-            }
-            
-            broadcastEvent({ type: eventType as GameEvent['type'], data });
-            return NextResponse.json({ success: true });
-        } catch (e) {
-            return NextResponse.json({ success: false, error: 'Invalid event data' }, { status: 400 });
-        }
-    }
-
-    // Set up SSE connection
-    const stream = new ReadableStream({
-        start(controller) {
-            // Send initial connection confirmation
-            controller.enqueue(
-                encoder.encode(`event: connected\ndata: ${JSON.stringify({ timestamp: Date.now() })}\n\n`)
-            );
-            
-            // Add this client to our set
-            clients.add(controller);
-            
-            // Set up ping interval
-            const pingInterval = setInterval(() => {
-                try {
-                    controller.enqueue(
-                        encoder.encode(`event: ping\ndata: ${JSON.stringify({ timestamp: Date.now() })}\n\n`)
-                    );
-                } catch (e) {
-                    clearInterval(pingInterval);
-                    clients.delete(controller);
-                }
-            }, 30000);
-
-            // Store the interval ID for cleanup
-            (controller as any).pingIntervalId = pingInterval;
-        },
-        cancel(controller) {
-            if ((controller as any).pingIntervalId) {
-                clearInterval((controller as any).pingIntervalId);
-            }
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ ping: new Date().toISOString() })}\n\n`)
+          );
+            } catch (e) {
+            // If we can't send, the client is probably gone
+            console.log('Error sending ping to client:', e);
+            clearInterval(pingInterval);
             clients.delete(controller);
-        }
-    });
+            }
+        }, 30000);
 
-    return new NextResponse(stream, {
-        headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*'
-        }
-    });
-}
+      // Store the interval ID for cleanup in cancel
+      (controller as any).pingIntervalId = pingInterval;
+    },
+    cancel(controller) {
+      // Clear the ping interval if it exists
+      if ((controller as any).pingIntervalId) {
+        clearInterval((controller as any).pingIntervalId);
+      }
+      // Remove this client when they disconnect
+      clients.delete(controller);
+    }
+  });
+
+  return new NextResponse(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    }
+  })};
