@@ -38,10 +38,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const createGuestUserMutation = useMutation({
 		mutationFn: async (data: { username: string }) => {
 			const res = await apiRequest('POST', '/api/auth/guest', data);
-			return await res.json();
+			const userData = await res.json();
+			if (!userData.id) {
+				throw new Error('Invalid user data received');
+			}
+			// Make sure the /api/auth/guest endpoint calls setSession
+			console.log(userData)
+			return userData as SelectUser;
 		},
 		onSuccess: (user: SelectUser) => {
 			queryClient.setQueryData(['/api/user'], user);
+			// Remove invalidation as it might cause unnecessary refetches
 			toast({
 				title: 'Welcome!',
 				description: `Hello, ${user.username}!`,

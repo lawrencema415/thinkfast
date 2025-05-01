@@ -50,7 +50,11 @@ export class MemStorage {
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    console.log('Getting user with ID:', id);
+    console.log('Current users in storage:', Array.from(this.users.entries()));
+    const user = this.users.get(id);
+    console.log('Found user:', user);
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -68,7 +72,9 @@ export class MemStorage {
       createdAt,
       avatarUrl: insertUser.avatarUrl ?? null
     };
+    console.log('Creating user with ID:', id);
     this.users.set(id, user);
+    console.log('Stored users:', Array.from(this.users.entries()));
     return user;
   }
   
@@ -84,6 +90,9 @@ export class MemStorage {
       createdAt 
     };
     this.rooms.set(id, room);
+
+    console.log('Current rooms in storage:', Array.from(this.rooms.entries()));
+    
     return room;
   }
   
@@ -110,6 +119,11 @@ export class MemStorage {
   
   // RoomPlayer operations
   async addPlayerToRoom(insertPlayer: InsertRoomPlayer): Promise<RoomPlayer> {    
+    // Validate userId
+    // if (!insertPlayer.userId) {
+    //   throw new Error('userId is required to add player to room');
+    // }
+
     // Check if player is already in the room
     const existingPlayer = Array.from(this.roomPlayers.values()).find(
       (player) => player.userId === insertPlayer.userId && player.roomId === insertPlayer.roomId,
