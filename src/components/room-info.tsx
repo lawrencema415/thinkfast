@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Room } from '@shared/schema';
 import { useGame } from '@/hooks/use-game';
-import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RoomInfoProps {
 	room: Room;

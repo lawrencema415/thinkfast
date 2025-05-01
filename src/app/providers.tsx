@@ -1,8 +1,8 @@
 'use client';
 
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { GameProvider } from '@/hooks/use-game';
-import { AuthProvider } from '@/hooks/use-auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Create a client

@@ -9,10 +9,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials, getUserColor } from '@/lib/utils';
-import { Trophy, RefreshCw, Share2, LogOut } from 'lucide-react';
+import { Trophy, Share2 } from 'lucide-react';
 import { PlayerWithUser } from '@shared/schema';
-import { useAuth } from '@/hooks/use-auth';
 import { useGame } from '@/hooks/use-game';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface GameCompletedModalProps {
 	isOpen: boolean;

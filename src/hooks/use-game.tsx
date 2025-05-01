@@ -14,11 +14,11 @@ import {
 	UseMutationResult,
 } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useSSE } from '@/hooks/useSSE';
 import type { InsertRoom, GameState, Song, Room } from '../shared/schema';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 type SongInput = {
 	title: string;
