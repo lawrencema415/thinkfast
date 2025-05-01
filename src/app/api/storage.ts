@@ -90,6 +90,9 @@ export class MemStorage {
       createdAt 
     };
     this.rooms.set(id, room);
+
+    console.log('Current rooms in storage:', Array.from(this.rooms.entries()));
+    
     return room;
   }
   
