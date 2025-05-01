@@ -74,32 +74,9 @@ export async function GET(request: NextRequest) {
         // Add this client to our set
         clients.add(controller);
         
-        // Set up ping interval with error handling
-        const pingInterval = setInterval(() => {
-          if (!clients.has(controller)) {
-            clearInterval(pingInterval);
-            return;
-          }
-          
-          try {
-            if (controller.desiredSize === null) {
-              clearInterval(pingInterval);
-              clients.delete(controller);
-              return;
-            }
-            
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ ping: new Date().toISOString() })}\n\n`)
-            );
-          } catch (e) {
-            console.log('Error sending ping to client:', e);
-            clearInterval(pingInterval);
-            clients.delete(controller);
-          }
-        }, 30000);
+        // Set up ping interval with error handlin
 
         // Store the interval ID for cleanup
-        (controller as any).pingIntervalId = pingInterval;
       } catch (error) {
         console.error('Error in stream start:', error);
         clients.delete(controller);

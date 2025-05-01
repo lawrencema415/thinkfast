@@ -3,6 +3,8 @@ import {
   type Room,
   type RoomPlayer,
   type InsertRoomPlayer,
+  Song,
+  Message,
 } from "@/shared/schema";
 import { User } from '@supabase/supabase-js';
 
@@ -37,6 +39,11 @@ export class RedisStorage {
     return crypto.randomUUID();
   }
 
+  async resolveRoomId(roomIdOrCode: string): Promise<string | null> {
+    if (roomIdOrCode.includes('-')) return roomIdOrCode; // UUID
+    return await redis.get(`roomCode:${roomIdOrCode}`);
+  }
+
   // Room operations
   async createRoom(user: User, options: { songsPerPlayer: number; timePerSong: number }): Promise<Room> {
     const id = this.generateId();
@@ -63,7 +70,8 @@ export class RedisStorage {
   }
 
   async getRoom(id: string): Promise<Room | undefined> {
-    const room = await redis.hgetall(`room:${id}`);
+    const uuid = await redis.get(`roomCode:${id}`);
+    const room = await redis.hgetall(`room:${uuid}`);
     return room ? room as Room : undefined;
   }
 
@@ -99,11 +107,62 @@ export class RedisStorage {
   }
 
   async getPlayersInRoom(roomId: string): Promise<RoomPlayer[]> {
-    const playerIds = await redis.smembers(`room:${roomId}:players`);
+    const resolvedRoomId = await this.resolveRoomId(roomId);
+    if (!resolvedRoomId) return [];
+  
+    const playerIds = await redis.smembers(`room:${resolvedRoomId}:players`);
     const players = await Promise.all(
       playerIds.map(id => redis.hgetall(`player:${id}`))
     );
-    return players.filter(Boolean) as RoomPlayer[];
+    return players.filter(p => p && Object.keys(p).length > 0) as RoomPlayer[];
+}
+
+  async getSongsForRoom(roomId: string): Promise<Song[]> {
+    const resolvedRoomId = await this.resolveRoomId(roomId);
+    if (!resolvedRoomId) return [];
+
+    const songIds = await redis.smembers(`room:${resolvedRoomId}:songs`);
+    const songs = await Promise.all(
+      songIds.map(id => redis.hgetall(`song:${id}`))
+    );
+    return songs.filter(Boolean) as Song[];
+  }
+
+  async getMessagesForRoom(roomId: string): Promise<Message[]> {
+    const resolvedRoomId = await this.resolveRoomId(roomId);
+    if (!resolvedRoomId) return [];
+
+    const messageIds = await redis.smembers(`room:${resolvedRoomId}:messages`);
+    const messages = await Promise.all(
+      messageIds.map(id => redis.hgetall(`message:${id}`))
+    );
+    return messages.filter(Boolean) as Message[];
+  }
+
+  async addSongToRoom(roomId: string, song: Omit<Song, 'id'>): Promise<Song> {
+    const id = this.generateId();
+    const newSong = {
+      ...song,
+      id,
+      isPlayed: false
+    };
+
+    await redis.hset(`song:${id}`, newSong);
+    await redis.sadd(`room:${roomId}:songs`, id);
+    return newSong;
+  }
+
+  async addMessageToRoom(roomId: string, message: Omit<Message, 'id'>): Promise<Message> {
+    const id = this.generateId();
+    const newMessage = {
+      ...message,
+      id,
+      timestamp: new Date()
+    };
+
+    await redis.hset(`message:${id}`, newMessage);
+    await redis.sadd(`room:${roomId}:messages`, id);
+    return newMessage;
   }
 }
 

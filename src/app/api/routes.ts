@@ -1,8 +1,40 @@
 import { storage } from "./storage";
+import { NextResponse } from 'next/server';
 
+// SSE endpoint to handle client connections
+const clients = new Map<string, (data: string) => void>();
 
-// Keep track of SSE clients
-const clients = new Map<string, Response>();
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const userId = searchParams.get('userId');
+
+  if (!userId) {
+    return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+  }
+
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    start(controller) {
+      const send = (data: string) => controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+      clients.set(userId, send);
+
+      // Remove client on disconnect
+      req.signal.addEventListener('abort', () => {
+        clients.delete(userId);
+        controller.close();
+      });
+    },
+  });
+
+  const headers = new Headers({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
+
+  return new Response(stream, { headers });
+}
 
 // Helper function to broadcast game state
 export const broadcastGameState = async (roomId: string) => {
@@ -25,10 +57,10 @@ export const broadcastGameState = async (roomId: string) => {
     timeRemaining: room.timePerSong
   };
 
-  // Send to all players in room using SSE message format
   for (const player of players) {
-    const client = clients.get(player.userId);
-    if (client) {
+    const send = clients.get(player.userId);
+    console.log('from server send', send);
+    if (send) {
       const sseMessage = {
         type: 'gameState',
         payload: {
@@ -36,7 +68,7 @@ export const broadcastGameState = async (roomId: string) => {
           timestamp: new Date().toISOString()
         }
       };
-      client.write(`data: ${JSON.stringify(sseMessage)}\n\n`);
+      send(JSON.stringify(sseMessage));
     }
   }
 };

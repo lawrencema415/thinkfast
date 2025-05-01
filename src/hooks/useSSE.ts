@@ -62,12 +62,6 @@ export const useSSE = () => {
         try {
           const data: SSEMessage = JSON.parse(event.data);
           console.log('SSE message parsed:', data);
-          
-          if (data.type === 'ping') {
-            // Handle ping message (optional)
-            console.log('Received ping:', data.timestamp);
-            return;
-          }
 
           if ('payload' in data) {
             // Handle game-related messages
