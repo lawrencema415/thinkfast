@@ -1,10 +1,27 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { eventHandlers } from '@/events/handlers';
+import { GameState } from '@/shared/schema';
 
-interface SSEMessage {
-    message?: string; 
-    ping?: any;
+interface BaseSSEMessage {
+  type: 'ping' | 'system' | 'chat' | 'guess' | 'gameState';
 }
+
+interface PingMessage extends BaseSSEMessage {
+  type: 'ping';
+  timestamp: string;
+}
+
+interface GameMessage extends BaseSSEMessage {
+  type: 'system' | 'chat' | 'guess' | 'gameState';
+  payload: {
+    roomId?: string;
+    userId?: string;
+    content?: string;
+    timestamp?: string;
+    gameState?: GameState;
+  };
+}
+
+type SSEMessage = PingMessage | GameMessage;
 
 export const useSSE = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -46,9 +63,24 @@ export const useSSE = () => {
           const data: SSEMessage = JSON.parse(event.data);
           console.log('SSE message parsed:', data);
           
-          if (data.message) {
-            console.log('Adding message to state:', data.message);
-            setMessages((prev) => [...prev, data.message as string]);
+          if (data.type === 'ping') {
+            // Handle ping message (optional)
+            console.log('Received ping:', data.timestamp);
+            return;
+          }
+
+          if ('payload' in data) {
+            // Handle game-related messages
+            switch (data.type) {
+              case 'system':
+              case 'chat':
+              case 'guess':
+                setMessages((prev) => [...prev, data.payload.content || '']);
+                break;
+              case 'gameState':
+                // Handle game state updates if needed
+                break;
+            }
           }
         } catch (error) {
           console.error('Error parsing SSE message:', error);

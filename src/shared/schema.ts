@@ -17,13 +17,20 @@ export const insertUserSchema = z.object({
   })
 });
 
+// Define the role type
+const roleSchema = z.enum(['player', 'host']);
+
 // Room model
 export const roomSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   code: z.string(),
-  hostId: z.string(), // Changed from number to string to match User id type
+  players: z.array(z.object({
+    user: insertUserSchema,
+    role: roleSchema
+  })),
+  hostId: z.string(),
   songsPerPlayer: z.number(),
-  timePerSong: z.number(), // in seconds
+  timePerSong: z.number(),
   isActive: z.boolean().default(true),
   createdAt: z.date(),
   isPlaying: z.boolean().default(false)
@@ -38,8 +45,8 @@ export const insertRoomSchema = z.object({
 
 // RoomPlayer model to track players in a room
 export const roomPlayerSchema = z.object({
-  id: z.number(),
-  roomId: z.number(),
+  id: z.string(),
+  roomId: z.string(),
   userId: z.string(), // Changed from number to string to match User id type
   score: z.number().default(0),
   songsAdded: z.number().default(0),
@@ -47,15 +54,16 @@ export const roomPlayerSchema = z.object({
 });
 
 export const insertRoomPlayerSchema = z.object({
-  roomId: z.number(),
-  userId: z.number()
+  roomId: z.string(),
+  userId: z.string(),
+  isHost: z.boolean().optional()
 });
 
 // Song model
 export const songSchema = z.object({
-  id: z.number(),
-  roomId: z.number(),
-  userId: z.number(),
+  id: z.string(),
+  roomId: z.string(),
+  userId: z.string(),
   title: z.string(),
   artist: z.string(),
   albumArt: z.string().optional().nullable(),
@@ -68,8 +76,8 @@ export const songSchema = z.object({
 });
 
 export const insertSongSchema = z.object({
-  roomId: z.number(),
-  userId: z.number(),
+  roomId: z.string(),
+  userId: z.string(),
   title: z.string(),
   artist: z.string(),
   albumArt: z.string().optional().nullable(),
@@ -82,9 +90,9 @@ export const insertSongSchema = z.object({
 // Guess model
 export const guessSchema = z.object({
   id: z.number(),
-  roomId: z.number(),
-  songId: z.number(),
-  userId: z.number(),
+  roomId: z.string(),
+  songId: z.string(),
+  userId: z.string(),
   content: z.string(),
   isCorrect: z.boolean().default(false),
   points: z.number().default(0),
@@ -93,26 +101,26 @@ export const guessSchema = z.object({
 });
 
 export const insertGuessSchema = z.object({
-  roomId: z.number(),
-  songId: z.number(),
-  userId: z.number(),
+  roomId: z.string(),
+  songId: z.string(),
+  userId: z.string(),
   content: z.string(),
   isCorrect: z.boolean().optional()
 });
 
 // Message model for chat
 export const messageSchema = z.object({
-  id: z.number(),
-  roomId: z.number(),
-  userId: z.number(),
+  id: z.string(),
+  roomId: z.string(),
+  userId: z.string(),
   content: z.string(),
   type: z.string().default("chat"), // "chat", "system", "guess"
   createdAt: z.date()
 });
 
 export const insertMessageSchema = z.object({
-  roomId: z.number(),
-  userId: z.number(),
+  roomId: z.string(),
+  userId: z.string(),
   content: z.string(),
   type: z.string().optional()
 });

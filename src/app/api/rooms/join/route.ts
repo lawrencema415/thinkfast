@@ -1,25 +1,23 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { verifyAuthInRouteHandler } from '@/lib/auth';
+import { storage } from '../../storage';
+import { broadcastGameState } from '../../routes';
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Verify authentication using our server-side auth helper
+    const { user, response } = await verifyAuthInRouteHandler(req);
+    
+    // If not authenticated, return the error response
+    if (!user) {
+      return response;
     }
 
     const body = await req.json();
     const { roomCode } = body;
 
-    // Find room by code
-    const room = await db.room.findFirst({
-      where: { code: roomCode },
-      include: {
-        players: true,
-      },
-    });
+    // Find room by code using Redis storage
+    const room = await storage.getRoomByCode(roomCode);
 
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
@@ -29,23 +27,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Room is not active' }, { status: 400 });
     }
 
+    // Get players in room
+    const players = await storage.getPlayersInRoom(room.id);
+
     // Check if user is already in the room
-    const existingPlayer = room.players.find(
-      (player) => player.userId === session.user.id
+    const existingPlayer = players.find(
+      (player) => player.userId === user.id
     );
 
     if (existingPlayer) {
       return NextResponse.json({ error: 'Already in room' }, { status: 400 });
     }
 
-    // Add player to room
-    await db.roomPlayer.create({
-      data: {
-        roomId: room.id,
-        userId: session.user.id,
-        isHost: false,
-      },
+    // Add player to room using Redis storage
+    await storage.addPlayerToRoom({
+      roomId: room.id,
+      userId: user.id,
+      isHost: false
     });
+
+    // Broadcast updated game state to all players
+    await broadcastGameState(room.id);
 
     return NextResponse.json(room);
   } catch (error) {
@@ -55,4 +57,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-} 
+}

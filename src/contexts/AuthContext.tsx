@@ -1,52 +1,57 @@
+// context/AuthContext.tsx
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client'; // Create client using supabase utility
 
 type AuthContextType = {
 	user: User | null;
 	loading: boolean;
-	signOut: () => Promise<void>; // Add this line
+	signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
 	user: null,
 	loading: true,
-	signOut: async () => {}, // Add this line
+	signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const [user, setUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
+	const supabase = createClient(); // Create Supabase client here
 
 	useEffect(() => {
-		// Check active sessions and sets the user
-		const getSession = async () => {
+		// Initialize and fetch session on mount
+		const initializeSession = async () => {
 			const {
 				data: { session },
 				error,
 			} = await supabase.auth.getSession();
-			setUser(session?.user ?? null);
-			setLoading(false);
 
 			if (error) {
 				console.error('Error fetching session:', error.message);
+			} else {
+				setUser(session?.user ?? null);
 			}
+
+			// Set up a subscription to auth state changes (login, logout, etc.)
+			const {
+				data: { subscription },
+			} = supabase.auth.onAuthStateChange((_event, session) => {
+				setUser(session?.user ?? null);
+				setLoading(false); // Stop loading once the session is set
+			});
+
+			// Cleanup subscription when the component unmounts
+			return () => subscription.unsubscribe();
 		};
 
-		getSession();
+		initializeSession();
+	}, [supabase]); // Run effect when supabase client changes
 
-		// Listen for changes on auth state (sign in, sign out, etc.)
-		const {
-			data: { subscription },
-		} = supabase.auth.onAuthStateChange((_event, session) => {
-			setUser(session?.user ?? null);
-		});
-
-		return () => subscription.unsubscribe();
-	}, []);
-
+	// Sign out function
 	const signOut = async () => {
 		const { error } = await supabase.auth.signOut();
 		if (error) {

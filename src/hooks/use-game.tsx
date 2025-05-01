@@ -138,7 +138,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	// Mutation to create a new room
 	const createRoomMutation = useMutation({
 		mutationFn: async (roomData: Omit<InsertRoom, 'hostId' | 'code'>) => {
-			const res = await apiRequest('POST', '/api/rooms', {
+			const res = await apiRequest('POST', '/api/rooms/create', {
 				action: 'create',
 				...roomData,
 				userId: user?.id,
@@ -164,7 +164,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	// Mutation to join an existing room
 	const joinRoomMutation = useMutation({
 		mutationFn: async (roomCode: string) => {
-			const res = await apiRequest('POST', '/api/rooms', {
+			const res = await apiRequest('POST', '/api/rooms/join', {
 				action: 'join',
 				roomCode,
 				userId: user?.id,
