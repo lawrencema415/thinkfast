@@ -7,7 +7,7 @@ import {
 	DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials, getUserColor } from '@/lib/utils';
 import { Trophy, Share2 } from 'lucide-react';
 import { PlayerWithUser } from '@shared/schema';
@@ -29,7 +29,10 @@ export function GameCompletedModal({
 	);
 	const handleShareResults = () => {
 		const results = `ThinkFast Results:\n${sortedPlayers
-			.map((p, i) => `${i + 1}. ${p.user.username}: ${p.score || 0} points`)
+			.map(
+				(p, i) =>
+					`${i + 1}. ${p.user.user_metadata.display_name}: ${p.score || 0} points`
+			)
 			.join('\n')}`;
 
 		navigator.clipboard.writeText(results).then(() => {
@@ -84,15 +87,18 @@ export function GameCompletedModal({
 							{/* Player info */}
 							<div className='flex items-center flex-1 min-w-0'>
 								<Avatar className='h-8 w-8 mr-3 ring-2 ring-border'>
-									<AvatarImage src={player.user.avatarUrl || undefined} />
 									<AvatarFallback
-										className={getUserColor(player.user.username)}
+										className={getUserColor(
+											player.user.user_metadata.display_name
+										)}
 									>
-										{getInitials(player.user.username)}
+										{getInitials(player.user.user_metadata.display_name)}
 									</AvatarFallback>
 								</Avatar>
 								<div className='truncate'>
-									<p className='font-medium truncate'>{player.user.username}</p>
+									<p className='font-medium truncate'>
+										{player.user.user_metadata.display_name}
+									</p>
 								</div>
 							</div>
 

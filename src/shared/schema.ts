@@ -4,11 +4,17 @@ import { z } from "zod";
 export const userSchema = z.object({
   id: z.string(), // Changed from number to string as Supabase uses UUID
   email: z.string().email(),
+  user_metadata: z.object({
+    display_name: z.string()
+  }),
 });
 
 export const insertUserSchema = z.object({
   id: z.string(), // Added ID field since Supabase provides it
   email: z.string().email(),
+  user_metadata: z.object({
+    display_name: z.string()
+  })
 });
 
 // Room model
