@@ -2,22 +2,20 @@ import { z } from "zod";
 
 // User model
 export const userSchema = z.object({
-  id: z.number(),
-  username: z.string(),
-  avatarUrl: z.string().optional().nullable(),
-  createdAt: z.date()
+  id: z.string(), // Changed from number to string as Supabase uses UUID
+  email: z.string().email(),
 });
 
 export const insertUserSchema = z.object({
-  username: z.string(),
-  avatarUrl: z.string().optional().nullable()
+  id: z.string(), // Added ID field since Supabase provides it
+  email: z.string().email(),
 });
 
 // Room model
 export const roomSchema = z.object({
   id: z.number(),
   code: z.string(),
-  hostId: z.number(),
+  hostId: z.string(), // Changed from number to string to match User id type
   songsPerPlayer: z.number(),
   timePerSong: z.number(), // in seconds
   isActive: z.boolean().default(true),
@@ -36,7 +34,7 @@ export const insertRoomSchema = z.object({
 export const roomPlayerSchema = z.object({
   id: z.number(),
   roomId: z.number(),
-  userId: z.number(),
+  userId: z.string(), // Changed from number to string to match User id type
   score: z.number().default(0),
   songsAdded: z.number().default(0),
   joinedAt: z.date()
