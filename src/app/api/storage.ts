@@ -1,10 +1,10 @@
 import { Redis } from '@upstash/redis';
 import {
-  type User,
   type Room,
   type RoomPlayer,
   type InsertRoomPlayer,
 } from "@/shared/schema";
+import { User } from '@supabase/supabase-js';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,

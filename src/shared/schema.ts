@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 // User model
 export const userSchema = z.object({
@@ -25,7 +26,7 @@ export const roomSchema = z.object({
   id: z.string(),
   code: z.string(),
   players: z.array(z.object({
-    user: insertUserSchema,
+    user: z.custom<SupabaseUser>(),
     role: roleSchema
   })),
   hostId: z.string(),
