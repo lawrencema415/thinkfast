@@ -1,40 +1,21 @@
-// import { useState } from 'react';
-// import { Button } from '@/components/ui/button';
-// import { useAuth } from '@/hooks/use-auth';
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
-// import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-// import {
-// 	DropdownMenu,
-// 	DropdownMenuContent,
-// 	DropdownMenuItem,
-// 	DropdownMenuSeparator,
-// 	DropdownMenuTrigger,
-// } from '@/components/ui/dropdown-menu';
-// import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-// import { getInitials } from '@/lib/utils';
 import {
-	HeadphonesIcon,
-	// 	HelpCircleIcon,
-	// 	TrophyIcon,
-	// 	MenuIcon,
-	// 	UserIcon,
-	// 	LogOutIcon,
-} from 'lucide-react';
-// import { useRouter } from 'next/navigation';
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '@/components/ui/popover';
+import { HeadphonesIcon, UserCircle, LogOut } from 'lucide-react';
 
 export function NavigationBar() {
-	// const { user, logoutMutation } = useAuth();
-	// const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-	// const router = useRouter();
+	const { user, signOut } = useAuth();
 
-	// const handleLogout = () => {
-	// 	logoutMutation.mutate();
-	// };
-
-	// const isAuthenticated = !!user;
-	// const isInGameRoom = location.startsWith('/room/');
-	// TODO: FIX THIS
-	// const isInGameRoom = false;
+	const handleLogout = async () => {
+		await signOut();
+	};
 
 	return (
 		<header className='bg-dark shadow-lg'>
@@ -48,26 +29,32 @@ export function NavigationBar() {
 						</h1>
 					</Link>
 				</div>
+
+				{user && (
+					<div className='flex items-center space-x-3'>
+						<span className='text-gray-300'>
+							{user.user_metadata.display_name}
+						</span>
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button variant='ghost' className='h-10 w-10 rounded-full p-0'>
+									<UserCircle className='h-6 w-6 text-gray-300' />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className='w-48' align='end'>
+								<Button
+									variant='ghost'
+									className='w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-100/10'
+									onClick={handleLogout}
+								>
+									<LogOut className='mr-2 h-4 w-4' />
+									Log out
+								</Button>
+							</PopoverContent>
+						</Popover>
+					</div>
+				)}
 			</nav>
 		</header>
 	);
 }
-
-// function ChevronDownIcon(props: React.SVGProps<SVGSVGElement>) {
-// 	return (
-// 		<svg
-// 			{...props}
-// 			xmlns='http://www.w3.org/2000/svg'
-// 			width='24'
-// 			height='24'
-// 			viewBox='0 0 24 24'
-// 			fill='none'
-// 			stroke='currentColor'
-// 			strokeWidth='2'
-// 			strokeLinecap='round'
-// 			strokeLinejoin='round'
-// 		>
-// 			<path d='m6 9 6 6 6-6' />
-// 		</svg>
-// 	);
-// }

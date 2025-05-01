@@ -78,6 +78,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	} = useQuery<GameState | null, Error>({
 		queryKey: ['/api/game/state'],
 		queryFn: async () => {
+			// TODO: This is fetching on home page, incorrect, need to debug
 			const res = await fetch('/api/game/state', {
 				credentials: 'include',
 			});

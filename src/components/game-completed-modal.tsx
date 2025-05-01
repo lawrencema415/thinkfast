@@ -11,8 +11,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials, getUserColor } from '@/lib/utils';
 import { Trophy, Share2 } from 'lucide-react';
 import { PlayerWithUser } from '@shared/schema';
-import { useGame } from '@/hooks/use-game';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface GameCompletedModalProps {
 	isOpen: boolean;
@@ -25,26 +23,10 @@ export function GameCompletedModal({
 	onOpenChange,
 	players,
 }: GameCompletedModalProps) {
-	const { user } = useAuth();
-	const { gameState, playAgainMutation, leaveRoomMutation } = useGame();
-
 	// Sort players by score, handling null scores as 0
 	const sortedPlayers = [...players].sort(
 		(a, b) => (b.score || 0) - (a.score || 0)
 	);
-	const isHost = user?.id === gameState?.room?.hostId;
-
-	const handlePlayAgain = () => {
-		if (isHost) {
-			playAgainMutation.mutate();
-		}
-	};
-
-	const handleExitRoom = () => {
-		leaveRoomMutation.mutate();
-		onOpenChange(false);
-	};
-
 	const handleShareResults = () => {
 		const results = `ThinkFast Results:\n${sortedPlayers
 			.map((p, i) => `${i + 1}. ${p.user.username}: ${p.score || 0} points`)

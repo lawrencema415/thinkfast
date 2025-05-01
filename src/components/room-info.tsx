@@ -3,7 +3,6 @@ import { Room } from '@shared/schema';
 import { useGame } from '@/hooks/use-game';
 import { useToast } from '@/hooks/use-toast';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface RoomInfoProps {
 	room: Room;
@@ -19,7 +18,6 @@ export function RoomInfo({
 	totalRounds,
 }: RoomInfoProps) {
 	const { leaveRoomMutation } = useGame();
-	const { user } = useAuth();
 	const { toast } = useToast();
 
 	const handleLeaveRoom = () => {
@@ -35,8 +33,6 @@ export function RoomInfo({
 			variant: 'default',
 		});
 	};
-
-	const isHost = user?.id === room.hostId;
 
 	return (
 		<div className='bg-dark rounded-lg shadow-lg p-4 mb-6'>
