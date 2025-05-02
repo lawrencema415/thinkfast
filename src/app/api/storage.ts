@@ -66,6 +66,8 @@ export class RedisStorage {
 
     await redis.hset(`room:${id}`, room);
     await redis.set(`roomCode:${code}`, id);
+    const mapping = await redis.get(`roomCode:${code}`);
+    console.log('Room code mapping:', mapping, 'code', code);
     return room;
   }
 
@@ -97,6 +99,7 @@ export class RedisStorage {
 
   // Player operations
   async addPlayerToRoom(insertPlayer: InsertRoomPlayer): Promise<RoomPlayer> {
+    console.log('attempt to add player to room', insertPlayer);
     const id = this.generateId();
     const player: RoomPlayer = {
       ...insertPlayer,
@@ -108,6 +111,7 @@ export class RedisStorage {
 
     await redis.hset(`player:${id}`, player);
     await redis.sadd(`room:${insertPlayer.roomId}:players`, id);
+    console.log('added player', player)
     return player;
   }
 
