@@ -171,6 +171,7 @@ export class RedisStorage {
   }
 
   async removePlayerFromRoom(roomId: string, userId: string): Promise<void> {
+      console.log('Removing player from room:', roomId, userId);
       // Get all player IDs for the room
       const playerIds = await redis.smembers(`room:${roomId}:players`);
       

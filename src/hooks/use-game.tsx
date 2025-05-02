@@ -194,10 +194,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 			// const nextHost = gameState.players.find(
 			// 	(player) => player.userId !== user?.id
 			// )?.userId;
+			console.log('leave room mutation', gameState)
 
-			const res = await apiRequest('POST', '/api/rooms', {
+			const res = await apiRequest('POST', '/api/rooms/leave', {
 				action: 'leave',
-				// roomId: gameState.room.id,
+				roomId: gameState.room.id,
 				userId: user?.id,
 				// isHost,
 				// nextHostId: isHost ? nextHost : undefined,

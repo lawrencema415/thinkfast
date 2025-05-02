@@ -8,6 +8,7 @@ export default function LeaveRoomButton() {
     const router = useRouter();
     
     const handleLeaveRoom = () => {
+        console.log('Leave Room button clicked');
         leaveRoomMutation.mutate();
     };
 
