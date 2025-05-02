@@ -70,15 +70,20 @@ export class RedisStorage {
   }
 
   async getRoom(id: string): Promise<Room | undefined> {
-    const uuid = await redis.get(`roomCode:${id}`);
-    const room = await redis.hgetall(`room:${uuid}`);
+    // const uuid = await redis.get(`roomCode:${id}`);
+    // const room = await redis.hgetall(`room:${uuid}`);
+    const room = await redis.hgetall(`room:${id}`);
     return room ? room as Room : undefined;
   }
 
   async getRoomByCode(code: string): Promise<Room | undefined> {
+    console.log('Looking up room with code:', code);
     const roomId = await redis.get(`roomCode:${code}`);
+    console.log('Found roomId:', roomId);
     if (!roomId) return undefined;
-    return this.getRoom(roomId as string);
+    const room = await this.getRoom(roomId as string);
+    console.log('Found room:', room);
+    return room;
   }
 
   async updateRoom(id: string, updates: Partial<Room>): Promise<Room> {

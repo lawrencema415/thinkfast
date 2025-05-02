@@ -39,6 +39,7 @@ export async function GET(req: Request) {
 // Helper function to broadcast game state
 export const broadcastGameState = async (roomId: string) => {
   const room = await storage.getRoom(roomId);
+  // const room = await storage.getRoomByCode(roomCode);
   if (!room) return;
 
   const players = await storage.getPlayersInRoom(roomId);

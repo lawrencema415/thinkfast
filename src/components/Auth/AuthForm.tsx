@@ -108,7 +108,7 @@ export default function AuthForm() {
 							setFormData({ ...formData, email: e.target.value })
 						}
 						placeholder='Enter your email'
-						className='w-full px-4 py-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all'
+						className='w-full px-4 py-3 rounded-lg bg-zinc-800 border border-zinc-700 text-black placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all'
 						required
 					/>
 				</div>
@@ -122,13 +122,14 @@ export default function AuthForm() {
 					</label>
 					<input
 						type='password'
+						style='color: black; background-color: white;'
 						id='password'
 						value={formData.password}
 						onChange={(e) =>
 							setFormData({ ...formData, password: e.target.value })
 						}
 						placeholder='Enter your password'
-						className='w-full px-4 py-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all'
+						className='w-full px-4 py-3 rounded-lg bg-zinc-800 border border-zinc-700 text-black placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all'
 						required
 					/>
 				</div>

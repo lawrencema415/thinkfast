@@ -16,8 +16,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { roomCode } = body;
 
+    console.log('attempt to join room with code', roomCode);
+
     // Find room by code using Redis storage
     const room = await storage.getRoomByCode(roomCode);
+
+    console.log('room found', room)
 
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
