@@ -186,21 +186,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	// Mutation to leave a room
 	const leaveRoomMutation = useMutation({
 		mutationFn: async () => {
-			if (!gameState?.room?.id) {
-				throw new Error('Not in a game room');
-			}
+			// if (!gameState?.room?.id) {
+			// 	throw new Error('Not in a game room');
+			// }
 
-			const isHost = user?.id === gameState.room.hostId;
-			const nextHost = gameState.players.find(
-				(player) => player.userId !== user?.id
-			)?.userId;
+			// const isHost = user?.id === gameState.room.hostId;
+			// const nextHost = gameState.players.find(
+			// 	(player) => player.userId !== user?.id
+			// )?.userId;
+			console.log('leave room mutation', gameState)
 
-			const res = await apiRequest('POST', '/api/rooms', {
+			const res = await apiRequest('POST', '/api/rooms/leave', {
 				action: 'leave',
 				roomId: gameState.room.id,
 				userId: user?.id,
-				isHost,
-				nextHostId: isHost ? nextHost : undefined,
+				// isHost,
+				// nextHostId: isHost ? nextHost : undefined,
 			});
 
 			return await res.json();

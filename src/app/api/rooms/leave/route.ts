@@ -1,50 +1,53 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { verifyAuthInRouteHandler } from '@/lib/auth';
+import { storage } from '../../storage';
+import { broadcastGameState } from '../../routes';
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Verify authentication using our server-side auth helper
+    const { user, response } = await verifyAuthInRouteHandler(req);
+    
+    // If not authenticated, return the error response
+    if (!user) {
+      return response;
     }
 
     const body = await req.json();
-    const { roomId } = body;
+    const { roomCode } = body;
 
-    // Find room and player
-    const room = await db.room.findUnique({
-      where: { id: roomId },
-      include: {
-        players: true,
-      },
-    });
+    console.log('leaving this room code', roomCode)
+
+    // Find room by code using Redis storage
+    const room = await storage.getRoomByCode(roomCode);
 
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    const player = room.players.find(
-      (p) => p.userId === session.user.id
+    // Get players in room
+    const players = await storage.getPlayersInRoom(room.id);
+
+    // Check if user is in the room
+    const existingPlayer = players.find(
+      (player) => player.userId === user.id
     );
 
-    if (!player) {
+    if (!existingPlayer) {
       return NextResponse.json({ error: 'Not in room' }, { status: 400 });
     }
 
     // If player is host, deactivate room
-    if (player.isHost) {
-      await db.room.update({
-        where: { id: roomId },
-        data: { isActive: false },
-      });
-    }
+    // const isHost = user.id === room.hostId;
+    // if (isHost) {
+    //   await storage.updateRoom(room.id, { isActive: false });
+    // }
 
-    // Remove player from room
-    await db.roomPlayer.delete({
-      where: { id: player.id },
-    });
+    // Remove player from room using Redis storage
+    await storage.removePlayerFromRoom(room.id, user.id);
+
+    // Broadcast updated game state to all players
+    await broadcastGameState(room.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -54,4 +57,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-} 
+}
