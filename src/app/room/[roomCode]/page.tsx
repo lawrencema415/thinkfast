@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
+import LeaveRoomButton from '@/components/leave-room';
 
 export default function RoomPage() {
 	const params = useParams();
@@ -33,6 +34,9 @@ export default function RoomPage() {
 	return (
 		<>
 			<div>Room page {roomCode}</div>
+			<div className="w-48 mt-4">
+			<LeaveRoomButton />
+			</div>
 			{/* <CountdownOverlay countdown={gameState.countdown?.isActive ? gameState.countdown.remaining : null} />
       <PrivateHintToast hint={gameState.privateHint} />
       

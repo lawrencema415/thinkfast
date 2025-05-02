@@ -169,6 +169,25 @@ export class RedisStorage {
     await redis.sadd(`room:${roomId}:messages`, id);
     return newMessage;
   }
+
+  async removePlayerFromRoom(roomId: string, userId: string): Promise<void> {
+      // Get all player IDs for the room
+      const playerIds = await redis.smembers(`room:${roomId}:players`);
+      
+      // Find the player ID that matches the user ID
+      const players = await Promise.all(
+          playerIds.map(id => redis.hgetall(`player:${id}`))
+      );
+      
+      const playerToRemove = players.find(p => p.userId === userId);
+      
+      if (playerToRemove) {
+          // Remove player from the room's player set
+          await redis.srem(`room:${roomId}:players`, playerToRemove.id);
+          // Delete the player's hash
+          await redis.del(`player:${playerToRemove.id}`);
+      }
+  }
 }
 
 export const storage = new RedisStorage();
