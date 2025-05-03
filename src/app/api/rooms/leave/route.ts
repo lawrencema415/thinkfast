@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { storage } from '../../storage';
-import { broadcastGameState } from '../../routes';
+import { broadcastGameState } from '../../events/route';
 
 export async function POST(req: Request) {
   try {
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     await storage.removePlayerFromRoom(room.id, user.id);
 
     // Broadcast updated game state to all players
-    await broadcastGameState(room.id);
+    await broadcastGameState(room.id, storage);
 
     return NextResponse.json({ success: true });
   } catch (error) {

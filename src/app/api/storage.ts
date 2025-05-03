@@ -79,12 +79,12 @@ export class RedisStorage {
   }
 
   async getRoomByCode(code: string): Promise<Room | undefined> {
-    console.log('Looking up room with code:', code);
+    // console.log('Looking up room with code:', code);
     const roomId = await redis.get(`roomCode:${code}`);
-    console.log('Found roomId:', roomId);
+    // console.log('Found roomId:', roomId);
     if (!roomId) return undefined;
     const room = await this.getRoom(roomId as string);
-    console.log('Found room:', room);
+    // console.log('Found room:', room);
     return room;
   }
 
@@ -99,7 +99,7 @@ export class RedisStorage {
 
   // Player operations
   async addPlayerToRoom(insertPlayer: InsertRoomPlayer): Promise<RoomPlayer> {
-    console.log('attempt to add player to room', insertPlayer);
+    // console.log('attempt to add player to room', insertPlayer);
     const id = this.generateId();
     const player: RoomPlayer = {
       ...insertPlayer,
@@ -111,7 +111,7 @@ export class RedisStorage {
 
     await redis.hset(`player:${id}`, player);
     await redis.sadd(`room:${insertPlayer.roomId}:players`, id);
-    console.log('added player', player)
+    // console.log('added player', player)
     return player;
   }
 
