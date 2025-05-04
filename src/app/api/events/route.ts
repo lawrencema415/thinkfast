@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { storage } from './storage';
 
 const encoder = new TextEncoder();
@@ -7,9 +8,11 @@ export const clients = new Map<string, ReadableStreamDefaultController<Uint8Arra
 const messages: string[] = [];
 
 export async function GET(request: NextRequest) {
+  const { user } = await verifyAuthInRouteHandler();
   const url = new URL(request.url);
   const message = url.searchParams.get('message');
-  const userId = url.searchParams.get('userId'); 
+  const userId = user?.id;
+  // const userId = url.searchParams.get('userId'); 
 
   let parsedMessage: any = null;
 
@@ -129,9 +132,9 @@ export const broadcastGameState = async (roomId: string, storage: any) => {
 
   for (const player of players) {
     // Debug: log types and values for comparison
-    console.log('--- Debugging clients Map ---');
-    console.log('Current clients Map:', Array.from(clients.entries()));
-    console.log('Players to broadcast:', players.map(p => p.userId));
+    // console.log('--- Debugging clients Map ---');
+    // console.log('Current clients Map:', Array.from(clients.entries()));
+    // console.log('Players to broadcast:', players.map(p => p.userId));
 
     console.log('Broadcasting to player:', {
       playerId: player.userId,
