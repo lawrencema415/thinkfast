@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { storage } from '../../storage';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
-import { broadcastGameState } from '../../routes';
+import { broadcastGameState } from '../../events/route';
 
 export async function POST(req: Request) {
   const { user, response } = await verifyAuthInRouteHandler();
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     isHost: true,
   });
 
-  await broadcastGameState(room.id);
+  await broadcastGameState(room.id, storage);
 
   return NextResponse.json(room);
 }

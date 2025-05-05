@@ -66,7 +66,7 @@ const GameContext = createContext<GameContextType | null>(null);
 export function GameProvider({ children }: { children: ReactNode }) {
 	const { toast } = useToast();
 	const { user } = useAuth();
-	const { isConnected, messages, sendMessage } = useSSE();
+	const { isConnected, messages, sendMessage } = useSSE(user?.id);
 	const [gameState, setGameState] = useState<GameState | null>(null);
 	const router = useRouter();
 

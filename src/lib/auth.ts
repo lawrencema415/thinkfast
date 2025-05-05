@@ -90,9 +90,10 @@ export async function requireAuth(request: NextRequest) {
 export async function verifyAuthInRouteHandler() {
   try {
     const supabase = await createServerSupabaseClient(); // 👈 pass req
-    const { data } = await supabase.auth.getSession();
+    // const { data } = await supabase.auth.getSession();
+    const { data, error } = await supabase.auth.getUser();
 
-    if (!data.session) {
+    if (error || !data.user) {
       return {
         user: null,
         response: Response.json(
@@ -102,7 +103,7 @@ export async function verifyAuthInRouteHandler() {
       };
     }
 
-    return { user: data.session.user, response: null };
+    return { user: data.user, response: null };
   } catch (error) {
     console.error('Route handler auth error:', error);
     return {

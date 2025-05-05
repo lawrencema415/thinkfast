@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { storage } from '../../storage';
-import { broadcastGameState } from '../../routes';
+import { broadcastGameState } from '../../events/route';
 
 export async function POST(req: Request) {
   try {
@@ -16,12 +16,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { roomCode } = body;
 
-    console.log('attempt to join room with code', roomCode);
+    // console.log('attempt to join room with code', roomCode);
 
     // Find room by code using Redis storage
     const room = await storage.getRoomByCode(roomCode);
 
-    console.log('room found', room)
+    // console.log('room found', room)
 
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
@@ -50,8 +50,10 @@ export async function POST(req: Request) {
       isHost: false
     });
 
+    // console.log('player added to room', room.id)
+
     // Broadcast updated game state to all players
-    await broadcastGameState(room.id);
+    await broadcastGameState(room.id, storage);
 
     return NextResponse.json(room);
   } catch (error) {
