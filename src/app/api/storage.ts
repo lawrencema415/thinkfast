@@ -184,7 +184,7 @@ export class RedisStorage {
           playerIds.map(id => redis.hgetall(`player:${id}`))
       );
       
-      const playerToRemove = players.find(p => p.userId === userId);
+      const playerToRemove = players.find(p => p?.userId === userId);
       
       if (playerToRemove) {
           // Remove player from the room's player set

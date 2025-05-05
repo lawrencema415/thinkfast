@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
-import { storage } from './storage';
 
 const encoder = new TextEncoder();
 // Create a global variable that won't be reset on module reloads
-// @ts-ignore - accessing global in Next.js
 const globalForClients = global as unknown as {
   clients: Map<string, ReadableStreamDefaultController<Uint8Array>> | undefined;
 };
@@ -89,7 +87,7 @@ export async function GET(request: NextRequest) {
           try {
             controller.enqueue(encoder.encode(':\n\n'));
           } catch (e) {
-            console.log(`Ping failed for user ${userId}, removing client`);
+            console.log(`Ping failed for user ${userId}, removing client`, e);
             clearInterval(pingIntervalId);
             clients.delete(userId);
           }
@@ -138,8 +136,8 @@ export const broadcastGameState = async (roomId: string, storage: any) => {
     players,
     songs,
     messages,
-    currentTrack: room.isPlaying ? songs.find(s => !s.isPlayed) : null,
-    currentRound: songs.filter(s => s.isPlayed).length,
+    currentTrack: room.isPlaying ? songs.find((s: any) => !s.isPlayed) : null,
+    currentRound: songs.filter((s: any) => s.isPlayed).length,
     totalRounds: songs.length,
     isPlaying: room.isPlaying,
     timeRemaining: room.timePerSong
@@ -147,9 +145,11 @@ export const broadcastGameState = async (roomId: string, storage: any) => {
 
   console.log('broadcasting game state', gameState);
 
+
+  // TODO: Fix any typings of this page after schema is more defined
   // Log the actual connected clients from the clients Map
   console.log(`Connected clients (${clients.size}):`, Array.from(clients.keys()));
-  console.log('Players to broadcast to:', players.map(p => p.userId));
+  console.log('Players to broadcast to:', players.map((p: any) => p.userId));
 
   for (const player of players) {
     // Check if this player has an active connection

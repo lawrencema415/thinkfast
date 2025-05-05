@@ -6,7 +6,7 @@ import { broadcastGameState } from '../../events/route';
 export async function POST(req: Request) {
   try {
     // Verify authentication using our server-side auth helper
-    const { user, response } = await verifyAuthInRouteHandler(req);
+    const { user, response } = await verifyAuthInRouteHandler();
     
     // If not authenticated, return the error response
     if (!user) {
