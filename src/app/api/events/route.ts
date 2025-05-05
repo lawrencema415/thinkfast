@@ -1,21 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
-
-const encoder = new TextEncoder();
-// Create a global variable that won't be reset on module reloads
-const globalForClients = global as unknown as {
-  clients: Map<string, ReadableStreamDefaultController<Uint8Array>> | undefined;
-};
-
-// Initialize the clients map if it doesn't exist
-if (!globalForClients.clients) {
-  globalForClients.clients = new Map<string, ReadableStreamDefaultController<Uint8Array>>();
-  console.log('Initialized global clients map');
-}
+import { clients, sseEncoder as encoder } from '@/lib/sse-clients';
 
 // Use the global clients map
-export const clients = globalForClients.clients;
 const messages: string[] = [];
 
 export async function GET(request: NextRequest) {
