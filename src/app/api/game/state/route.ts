@@ -5,8 +5,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const roomCode = searchParams.get('roomCode');
     // const roomId = searchParams.get('roomId');
-    // console.log('called', roomId);
-    console.log('called', roomCode);
 
     // if (!roomId) {
     //     return NextResponse.json({ error: 'Room ID is required' }, { status: 400 });
@@ -18,7 +16,6 @@ export async function GET(request: NextRequest) {
 
     // const room = await storage.getRoom(roomId);
     const room = await storage.getRoomByCode(roomCode);
-    console.log(room, 'room');
     if (!room) {
         return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
@@ -40,7 +37,6 @@ export async function GET(request: NextRequest) {
         isPlaying: room.isPlaying,
         timeRemaining: room.timePerSong
     };
-    console.log('gameState', gameState);
     
     return NextResponse.json({ gameState });
 }

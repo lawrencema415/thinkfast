@@ -14,9 +14,8 @@ import { FeatureSection } from '@/components/Home/FeatureSection';
 export default function HomePage() {
 	const [activeTab, setActiveTab] = useState<string>('create');
 	const [showReadyToPlayModal, setShowReadyToPlayModal] = useState(false);
-	const { user, loading } = useAuth();
+	const { loading } = useAuth();
 	// const router = useRouter();
-	console.log('user', user);
 
 	if (loading) {
 		return <div>Loading...</div>;

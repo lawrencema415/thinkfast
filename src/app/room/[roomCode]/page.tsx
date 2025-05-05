@@ -27,7 +27,7 @@ export default function RoomPage() {
 				const response = await axios.get(
 					`/api/game/state?roomCode=${roomCode}`
 				);
-				setInitialState(response.data);
+				setInitialState(response.data.gameState);
 			} catch (error) {
 				console.error('Error fetching game state:', error);
 				toast({

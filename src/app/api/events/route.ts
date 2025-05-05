@@ -71,17 +71,17 @@ export async function GET(request: NextRequest) {
         clients.set(userId, controller);
         console.log(`Client added - User ID: ${userId}, Total clients: ${clients.size}, All clients: ${Array.from(clients.keys())}`);
 
-        const pingIntervalId = setInterval(() => {
-          try {
-            controller.enqueue(encoder.encode(':\n\n'));
-          } catch (e) {
-            console.log(`Ping failed for user ${userId}, removing client`, e);
-            clearInterval(pingIntervalId);
-            clients.delete(userId);
-          }
-        }, 15000);
+        // const pingIntervalId = setInterval(() => {
+        //   try {
+        //     controller.enqueue(encoder.encode(':\n\n'));
+        //   } catch (e) {
+        //     console.log(`Ping failed for user ${userId}, removing client`, e);
+        //     clearInterval(pingIntervalId);
+        //     clients.delete(userId);
+        //   }
+        // }, 15000);
 
-        (controller as any).pingIntervalId = pingIntervalId;
+        // (controller as any).pingIntervalId = pingIntervalId;
       } catch (error) {
         console.error('Error in stream start:', error);
         clients.delete(userId);

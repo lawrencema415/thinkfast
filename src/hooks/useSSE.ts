@@ -83,7 +83,6 @@ export const useSSE = (roomId?: string) => {
                             setMessages((prev) => [...prev, data.payload.content || '']);
                             break;
                         case 'gameState':
-                          console.log('called!');
                                 setGameState(data.payload.gameState!);
                             break;
                     }

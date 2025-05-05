@@ -5,8 +5,7 @@ import { broadcastGameState } from '@/lib/broadcast';
 
 export async function POST(req: Request) {
   const { user, response } = await verifyAuthInRouteHandler();
-  console.log('user', user);
-  console.log('response', response);
+
   if (!user) return response;
 
   const body = await req.json();

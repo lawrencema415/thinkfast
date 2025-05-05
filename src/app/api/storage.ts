@@ -66,8 +66,6 @@ export class RedisStorage {
 
     await redis.hset(`room:${id}`, room);
     await redis.set(`roomCode:${code}`, id);
-    const mapping = await redis.get(`roomCode:${code}`);
-    console.log('Room code mapping:', mapping, 'code', code);
     return room;
   }
 

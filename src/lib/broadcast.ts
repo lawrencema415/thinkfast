@@ -26,7 +26,6 @@ export const broadcastGameState = async (roomId: string, storage: any) => {
     timeRemaining: room.timePerSong
   };
 
-  console.log('broadcasting game state', gameState);
 
 
   // TODO: Fix any typings of this page after schema is more defined
