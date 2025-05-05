@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { storage } from '../../storage';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
-import { broadcastGameState } from '../../events/route';
+import { broadcastGameState } from '@/lib/broadcast';
 
 // TODO: TEMPLATE FROM CREATE, UPDATE TO START ROUTE!
 export async function POST(req: Request) {

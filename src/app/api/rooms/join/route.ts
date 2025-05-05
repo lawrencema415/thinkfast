@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { storage } from '../../storage';
-import { broadcastGameState } from '../../events/route';
+import { broadcastGameState } from '@/lib/broadcast';
 
 export async function POST(req: Request) {
   try {
