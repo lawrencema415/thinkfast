@@ -26,10 +26,9 @@ type SSEMessage = PingMessage | GameMessage;
 export const useSSE = (userId?: string) => {
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
+  const [gameState, setGameState] = useState<GameState | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Add sendMessage function
   
   useEffect(() => {
     const baseURL = process.env.NODE_ENV === 'production'
@@ -77,7 +76,10 @@ export const useSSE = (userId?: string) => {
                             setMessages((prev) => [...prev, data.payload.content || '']);
                             break;
                         case 'gameState':
-                            // Handle game state updates if needed
+                            console.log('Game state update received:', data.payload.gameState);
+                            if (data.payload.gameState) {
+                                setGameState(data.payload.gameState);
+                            }
                             break;
                     }
                 }
@@ -104,6 +106,17 @@ export const useSSE = (userId?: string) => {
     
     setupEventSource();
     
+    // Send an authentication message after connecting
+    if (userId) {
+        setTimeout(() => {
+            const authMessage = JSON.stringify({
+                type: 'authenticate',
+                payload: { userId }
+            });
+            sendMessage(authMessage);
+            console.log('Sent authentication message');
+        }, 1000);
+    }
     
     return () => {
         console.log('Cleaning up SSE connection');
@@ -154,6 +167,7 @@ export const useSSE = (userId?: string) => {
   return {
     isConnected,
     messages,
+    gameState,
     sendMessage
   };
 };
