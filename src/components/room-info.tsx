@@ -20,9 +20,10 @@ export function RoomInfo({
 	const { leaveRoomMutation } = useGame();
 	const { toast } = useToast();
 
+	// TODO: Fix handleLeaveRoom/route
 	const handleLeaveRoom = () => {
 		console.log('leaving room');
-		leaveRoomMutation.mutate();
+		leaveRoomMutation.mutate('temp');
 	};
 
 	const handleCopyRoomCode = () => {
