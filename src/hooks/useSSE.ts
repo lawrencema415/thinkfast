@@ -23,12 +23,19 @@ interface GameMessage extends BaseSSEMessage {
 
 type SSEMessage = PingMessage | GameMessage;
 
-export const useSSE = (userId?: string) => {
+export const useSSE = (roomId?: string) => {
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // console.log('messages from useSSE hook:', messages);
+  // console.log('gameState from useSSE hook:', gameState);
+
+  useEffect(() => {
+    console.log('gameState updated:', gameState);
+  }, [gameState]);
   
   useEffect(() => {
     const baseURL = process.env.NODE_ENV === 'production'
@@ -36,11 +43,11 @@ export const useSSE = (userId?: string) => {
         : 'http://localhost:3000';
     
     // Add userId to the SSE URL if provided
-    const sseUrl = userId
-        ? `${baseURL}/api/events?userId=${encodeURIComponent(userId)}`
+    const sseUrl = roomId
+        ? `${baseURL}/api/events?roomId=${encodeURIComponent(roomId)}`
         : `${baseURL}/api/events`;
     
-    console.log('Connecting to SSE at:', sseUrl);
+    // console.log('Connecting to SSE at:', sseUrl);
 
     const setupEventSource = () => {
         if (eventSourceRef.current) {
@@ -51,7 +58,7 @@ export const useSSE = (userId?: string) => {
         eventSourceRef.current = sse;
     
         sse.onopen = () => {
-            console.log('SSE connection opened');
+            // console.log('SSE connection opened');
             setIsConnected(true);
             
             if (reconnectTimeoutRef.current) {
@@ -61,7 +68,7 @@ export const useSSE = (userId?: string) => {
         };
     
         sse.onmessage = (event) => {
-            console.log('Raw SSE event received:', event.data);
+            // console.log('Raw SSE event received:', event.data);
             
             try {
                 const data: SSEMessage = JSON.parse(event.data);
@@ -76,10 +83,8 @@ export const useSSE = (userId?: string) => {
                             setMessages((prev) => [...prev, data.payload.content || '']);
                             break;
                         case 'gameState':
-                            console.log('Game state update received:', data.payload.gameState);
-                            if (data.payload.gameState) {
-                                setGameState(data.payload.gameState);
-                            }
+                          console.log('called!');
+                                setGameState(data.payload.gameState!);
                             break;
                     }
                 }
@@ -96,30 +101,32 @@ export const useSSE = (userId?: string) => {
             
             if (!reconnectTimeoutRef.current) {
                 reconnectTimeoutRef.current = setTimeout(() => {
-                    console.log('Attempting to reconnect...');
+                    // console.log('Attempting to reconnect...');
                     reconnectTimeoutRef.current = null;
                     setupEventSource();
                 }, 5000);
             }
         };
     };
+
+    console.log('gameState from useSSE', gameState)
     
     setupEventSource();
     
     // Send an authentication message after connecting
-    if (userId) {
-        setTimeout(() => {
-            const authMessage = JSON.stringify({
-                type: 'authenticate',
-                payload: { userId }
-            });
-            sendMessage(authMessage);
-            console.log('Sent authentication message');
-        }, 1000);
-    }
+    // if (userId) {
+    //     setTimeout(() => {
+    //         const authMessage = JSON.stringify({
+    //             type: 'authenticate',
+    //             payload: { userId }
+    //         });
+    //         sendMessage(authMessage);
+    //         // console.log('Sent authentication message');
+    //     }, 1000);
+    // }
     
     return () => {
-        console.log('Cleaning up SSE connection');
+        // console.log('Cleaning up SSE connection');
         if (eventSourceRef.current) {
             eventSourceRef.current.close();
         }
@@ -128,7 +135,9 @@ export const useSSE = (userId?: string) => {
         }
         setIsConnected(false);
     };
-  }, [userId]);
+  // Add gameState here will cause infinite loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
 
   const sendMessage = useCallback((message: string) => {
     if (!message.trim()) {
@@ -142,18 +151,18 @@ export const useSSE = (userId?: string) => {
     
     const encodedMessage = encodeURIComponent(message);
     // Include userId in the URL if available
-    const url = userId
-      ? `${baseURL}/api/events?message=${encodedMessage}&userId=${encodeURIComponent(userId)}`
+    const url = roomId
+      ? `${baseURL}/api/events?message=${encodedMessage}&roomId=${encodeURIComponent(roomId)}`
       : `${baseURL}/api/events?message=${encodedMessage}`;
     
-    console.log('Sending message to:', url);
+    // console.log('Sending message to:', url);
 
     fetch(url)
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        console.log('Message sent successfully, status:', response.status);
+        // console.log('Message sent successfully, status:', response.status);
         return response.json();
     })
       .then(data => {
@@ -162,7 +171,7 @@ export const useSSE = (userId?: string) => {
       .catch(error => {
         console.error('Error sending message:', error);
     });
-  }, [userId]);
+  }, [roomId]);
   
   return {
     isConnected,
