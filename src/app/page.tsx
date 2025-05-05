@@ -10,6 +10,7 @@ import { HeroSection } from '@/components/Home/HeroSection';
 import { HowToPlaySection } from '@/components/Home/HowToPlaySection';
 import { GameSection } from '@/components/Home/GameSection';
 import { FeatureSection } from '@/components/Home/FeatureSection';
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function HomePage() {
 	const [activeTab, setActiveTab] = useState<string>('create');
@@ -24,17 +25,7 @@ export default function HomePage() {
 	}, []);
 
 	if (loading) {
-		return (
-			<div className='min-h-screen flex items-center justify-center bg-dark'>
-				<div className='music-wave'>
-					<span></span>
-					<span></span>
-					<span></span>
-					<span></span>
-					<span></span>
-				</div>
-			</div>
-		);
+		return <LoadingScreen />;
 	}
 
 	// useEffect(() => {
