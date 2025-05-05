@@ -1,5 +1,5 @@
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
-const SPOTIFY_AUTH_BASE = 'https://accounts.spotify.com/api/token';
+// const SPOTIFY_AUTH_BASE = 'https://accounts.spotify.com/api/token';
 
 // Types for Spotify API responses
 export interface SpotifyTrack {

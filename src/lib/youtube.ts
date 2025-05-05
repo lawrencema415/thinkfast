@@ -1,4 +1,4 @@
-const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
+// const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
 
 // Types for YouTube API responses
 export interface YouTubeVideo {
