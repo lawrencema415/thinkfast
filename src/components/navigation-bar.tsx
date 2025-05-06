@@ -30,7 +30,7 @@ export function NavigationBar() {
 					</Link>
 				</div>
 
-				{user && (
+				{user ? (
 					<div className='flex items-center space-x-3'>
 						<span className='text-gray-300'>
 							{user.user_metadata.display_name}
@@ -53,6 +53,15 @@ export function NavigationBar() {
 							</PopoverContent>
 						</Popover>
 					</div>
+				) : (
+					<Link href='/login'>
+						<Button
+							variant='ghost'
+							className='text-sm px-7 py-3 rounded-full bg-gradient-to-r from-primary to-secondary hover:shadow-lg hover:shadow-primary/20 transition-all duration-300'
+						>
+							Log In
+						</Button>
+					</Link>
 				)}
 			</nav>
 		</header>

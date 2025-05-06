@@ -2,11 +2,13 @@
 
 import { Button } from '@/components/ui/button';
 import { MusicWave } from '@/components/ui/music-wave';
+import { User } from '@supabase/supabase-js';
 import { ChevronRight, Headphones, Music } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface HeroSectionProps {
 	onStartPlaying: () => void;
+	user: User | null;
 }
 
 export function HeroSection({ onStartPlaying }: HeroSectionProps) {

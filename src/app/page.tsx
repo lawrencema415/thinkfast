@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { NavigationBar } from '@/components/navigation-bar';
 import { Footer } from '@/components/footer';
 import { ReadyToPlayModal } from '@/components/ready-to-play-modal';
@@ -11,13 +11,13 @@ import { HowToPlaySection } from '@/components/Home/HowToPlaySection';
 import { GameSection } from '@/components/Home/GameSection';
 import { FeatureSection } from '@/components/Home/FeatureSection';
 import LoadingScreen from '@/components/LoadingScreen';
+import { isEmpty } from 'lodash';
 
 export default function HomePage() {
-	const [activeTab, setActiveTab] = useState<string>('create');
 	const [showReadyToPlayModal, setShowReadyToPlayModal] = useState(false);
 	const [mounted, setMounted] = useState(false);
-	const { loading } = useAuth();
-	// const router = useRouter();
+	const { loading, user } = useAuth();
+	const router = useRouter();
 
 	// Add animation on mount
 	useEffect(() => {
@@ -28,11 +28,13 @@ export default function HomePage() {
 		return <LoadingScreen />;
 	}
 
-	// useEffect(() => {
-	// 	if (!loading && !user) {
-	// 		router.push('/login');
-	// 	}
-	// }, [loading, user, router]);
+	const handleStartPlaying = () => {
+		if (!isEmpty(user)) {
+			setShowReadyToPlayModal(true);
+		} else {
+			router.push('/login');
+		}
+	};
 
 	return (
 		<div
@@ -42,9 +44,9 @@ export default function HomePage() {
 		>
 			<NavigationBar />
 			<main className='flex-1 overflow-hidden'>
-				<HeroSection onStartPlaying={() => setShowReadyToPlayModal(true)} />
+				<HeroSection onStartPlaying={handleStartPlaying} user={user} />
 				<HowToPlaySection />
-				<GameSection activeTab={activeTab} onTabChange={setActiveTab} />
+				<GameSection />
 				<FeatureSection />
 			</main>
 			<Footer />
