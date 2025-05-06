@@ -97,25 +97,27 @@ export async function GET(request: NextRequest) {
       clients.delete(userId);
       
       // Get the roomId from the URL parameters
-      const roomId = url.searchParams.get('roomId');
+      const roomCode = url.searchParams.get('roomCode');
       
       // If we have a roomId, handle the player leaving the room
-      if (roomId && userId) {
+      if (roomCode && userId) {
         // Use an async IIFE to handle the async operations
         (async () => {
           try {
             // Resolve the room ID (could be a code or UUID)
-            const resolvedRoomId = await storage.resolveRoomId(roomId);
-            if (resolvedRoomId) {
+            const room = await storage.getRoomByCode(roomCode);
+            const roomId = room?.id;
+
+            if (roomId) {
               // Remove the player from the room
-              await storage.removePlayerFromRoom(resolvedRoomId, userId);
+              await storage.removePlayerFromRoom(roomId, userId);
               
               // Broadcast the updated game state to all remaining players
-              await broadcastGameState(resolvedRoomId, storage);
-              console.log(`Player ${userId} removed from room ${roomId} due to disconnection`);
+              await broadcastGameState(roomCode, storage);
+              console.log(`Player ${userId} removed from room ${roomCode} due to disconnection`);
             }
           } catch (error) {
-            console.error(`Error handling disconnection for user ${userId} in room ${roomId}:`, error);
+            console.error(`Error handling disconnection for user ${userId} in room ${roomCode}:`, error);
           }
         })();
       }
