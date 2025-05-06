@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
 
     // const room = await storage.getRoom(roomId);
     const room = await storage.getRoomByCode(roomCode);
+
     if (!room) {
         return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }

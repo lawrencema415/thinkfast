@@ -1,13 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { useGame } from '@/hooks/use-game';
 
-export default function LeaveRoomButton() {
+interface Props {
+	roomCode: string;
+}
+
+export default function LeaveRoomButton({ roomCode }: Props) {
 	const { leaveRoomMutation } = useGame();
 
 	// TODO: FIX handleLeaveRoom/route
 	const handleLeaveRoom = () => {
 		console.log('Leave Room button clicked');
-		leaveRoomMutation.mutate('temp');
+		leaveRoomMutation.mutate(roomCode);
 	};
 
 	return (

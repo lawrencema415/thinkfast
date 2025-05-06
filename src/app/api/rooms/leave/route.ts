@@ -20,28 +20,9 @@ export async function POST(req: Request) {
 
     // Find room by code using Redis storage
     const room = await storage.getRoomByCode(roomCode);
-
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
-
-    // Get players in room
-    const players = await storage.getPlayersInRoom(room.id);
-
-    // Check if user is in the room
-    const existingPlayer = players.find(
-      (player) => player.userId === user.id
-    );
-
-    if (!existingPlayer) {
-      return NextResponse.json({ error: 'Not in room' }, { status: 400 });
-    }
-
-    // If player is host, deactivate room
-    // const isHost = user.id === room.hostId;
-    // if (isHost) {
-    //   await storage.updateRoom(room.id, { isActive: false });
-    // }
 
     // Remove player from room using Redis storage
     await storage.removePlayerFromRoom(room.id, user.id);

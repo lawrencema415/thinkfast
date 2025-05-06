@@ -81,6 +81,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 			const res = await apiRequest('POST', '/api/rooms/leave', {
 				roomCode,
 			});
+
 			if (!res.ok) {
 				const error = await res.json();
 				throw new Error(error.message || 'Failed to leave room');

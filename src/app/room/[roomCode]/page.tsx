@@ -19,6 +19,7 @@ export default function RoomPage() {
 		if (gameState) {
 			setInitialState(gameState); // Update the state when the gameState changes
 		}
+		console.log('gameState when SSE', gameState);
 	}, [gameState]);
 
 	useEffect(() => {
@@ -41,11 +42,13 @@ export default function RoomPage() {
 		fetchGameState();
 	}, [roomCode, toast]);
 
+	console.log('initialState', initialState);
+
 	return (
 		<>
 			<div>Room page {roomCode}</div>
 			<div className='w-48 mt-4'>
-				<LeaveRoomButton />
+				<LeaveRoomButton roomCode={roomCode} />
 			</div>
 			{/* Use the gameState from SSE */}
 			{initialState && (

@@ -22,8 +22,7 @@ export function RoomInfo({
 
 	// TODO: Fix handleLeaveRoom/route
 	const handleLeaveRoom = () => {
-		console.log('leaving room');
-		leaveRoomMutation.mutate('temp');
+		leaveRoomMutation.mutate(room.code);
 	};
 
 	const handleCopyRoomCode = () => {
