@@ -97,7 +97,8 @@ export default function RoomPage() {
 							}}
 						/>
 						<ChatBox
-							messages={[]}
+							messages={gameState?.messages || []}
+							roomCode={roomCode}
 							users={initialState.players || []}
 							onSendMessage={() => {}}
 						/>

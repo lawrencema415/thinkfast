@@ -56,3 +56,42 @@ export const broadcastGameState = async (roomCode: string, storage: any) => {
     }
   }
 };
+
+export const broadcastMessage = async (roomCode: string, message: any, storage: any) => {
+  const room = await storage.getRoomByCode(roomCode);
+  if (!room) {
+    console.error('No room to broadcast message to', roomCode);
+    return;
+  }
+
+  const players = await storage.getPlayersInRoom(room.id);
+
+  for (const player of players) {
+    // Check if this player has an active connection
+    if (clients.has(player.userId)) {
+      console.log(`Updating chatbox for player ${player.userId} (connection found)`);
+      const controller = clients.get(player.userId);
+      if (controller) {
+        const sseMessage = {
+          type: message.type || 'chat',
+          payload: {
+            roomCode,
+            userId: message.userId,
+            content: message.content,
+            createdAt: new Date().toISOString()
+          }
+        };
+        try {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(sseMessage)}\n\n`)
+          );
+        } catch (e) {
+          console.log('Error sending message to client:', e);
+          clients.delete(player.userId);
+        }
+      }
+    } else {
+      console.log(`Player ${player.userId} has no active connection`);
+    }
+  }
+};
