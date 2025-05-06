@@ -100,11 +100,12 @@ export class RedisStorage {
   
 
   async getRoomByCode(code: string): Promise<string | null> {
-    return await redis.get(`roomCode:${code}`)
+    return await redis.get<string>(`roomCode:${code}`)
   }
 
   async getGameStateByRoomCode(code: string): Promise<GameState | null> {
-    const roomId = await redis.get<string>(`roomCode:${code}`);
+    // const roomId = await redis.get<string>(`roomCode:${code}`);
+    const roomId = await this.getRoomByCode(code);
     if (!roomId) return null;
   
     // Retrieve the game state as a string
@@ -203,10 +204,12 @@ export class RedisStorage {
   }
 
   async getPlayersInRoom(roomId: string): Promise<Player[]> {
-    const resolvedRoomId = await this.resolveRoomId(roomId);
-    if (!resolvedRoomId) return [];
+    // const resolvedRoomId = await this.resolveRoomId(roomId);
+    // if (!resolvedRoomId) return [];
+
+    if (!roomId) return [];
   
-    const json = await redis.get<GameState>(`gameState:${resolvedRoomId}`);
+    const json = await redis.get<GameState>(`gameState:${roomId}`);
     if (!json) return [];
   
     return json.players;
