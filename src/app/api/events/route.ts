@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       }
     },
     cancel(controller) {
-      console.log(`Stream cancelled for user ${userId}, removing client`);
+      // console.log(`Stream cancelled for user ${userId}, removing client`);
       if ((controller as any).pingIntervalId) {
         clearInterval((controller as any).pingIntervalId);
       }

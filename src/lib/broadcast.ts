@@ -30,8 +30,8 @@ export const broadcastGameState = async (roomCode: string, storage: any) => {
 
   // TODO: Fix any typings of this page after schema is more defined
   // Log the actual connected clients from the clients Map
-  console.log(`Connected clients (${clients.size}):`, Array.from(clients.keys()));
-  console.log('Players to broadcast to:', players.map((p: any) => p.userId));
+  // console.log(`Connected clients (${clients.size}):`, Array.from(clients.keys()));
+  // console.log('Players to broadcast to:', players.map((p: any) => p.userId));
 
   for (const player of players) {
     // Check if this player has an active connection
