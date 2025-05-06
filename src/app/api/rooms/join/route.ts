@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     // console.log('player added to room', room.id)
 
     // Broadcast updated game state to all players
-    await broadcastGameState(room.id, storage);
+    await broadcastGameState(roomCode, storage);
 
     return NextResponse.json(room);
   } catch (error) {
