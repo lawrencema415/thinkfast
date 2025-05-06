@@ -74,6 +74,7 @@ export class RedisStorage {
         {
           user,
           role: ROLE.HOST,
+          score: 0,
         },
       ],
       room,
@@ -153,7 +154,7 @@ export class RedisStorage {
       throw new Error('Failed to parse game state');
     }
   
-    const player: Player = { user, role: ROLE.PLAYER };
+    const player: Player = { user, role: ROLE.PLAYER, score: 0 };
     gameState.players.push(player);
     
     // Save the updated game state back to Redis

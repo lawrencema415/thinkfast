@@ -12,6 +12,7 @@ const roleSchema = z.enum([ROLE.HOST, ROLE.PLAYER]);
 export const playerSchema = z.object({
   user: z.custom<SupabaseUser>(),
   role: roleSchema,
+  score: z.number().default(0),
 });
 
 // Room model
