@@ -16,7 +16,7 @@ interface ChatBoxProps {
 
 export function ChatBox({
 	messages,
-	users,
+	// users,
 	roomCode,
 	isGuessing = false,
 }: ChatBoxProps) {
