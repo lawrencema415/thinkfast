@@ -21,8 +21,8 @@ export function CreateRoomForm() {
 				timePerSong: secondsPerSong,
 			},
 			{
-				onSuccess: (room) => {
-					router.push(`/room/${room.code}`);
+				onSuccess: (gameState) => {
+					router.push(`/room/${gameState.room.code}`);
 				},
 			}
 		);
