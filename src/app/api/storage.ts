@@ -227,7 +227,7 @@ export class RedisStorage {
     return json.songs;
   }
 
-  async saveMessage(message: any): Promise<Message[]>{
+  async saveMessage(message: Message): Promise<Message>{
     // First, add the message to the game state
     const roomId = message.roomId;
     const key = `gameState:${roomId}`;
