@@ -5,12 +5,10 @@ interface Props {
 	roomCode: string;
 }
 
-export default function LeaveRoomButton({ roomCode }: Props) {
+export default function LeaveButton({ roomCode }: Props) {
 	const { leaveRoomMutation } = useGame();
 
-	// TODO: FIX handleLeaveRoom/route
 	const handleLeaveRoom = () => {
-		console.log('Leave Room button clicked');
 		leaveRoomMutation.mutate(roomCode);
 	};
 

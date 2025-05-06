@@ -1,9 +1,3 @@
-import React from 'react';
-
-export default function AddSongs() {
-	return <div>AddSongs</div>;
-}
-
 // import { Button } from '@/components/ui/button';
 // import { Trash2 } from 'lucide-react';
 // import { Song } from '@shared/schema';

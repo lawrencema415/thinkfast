@@ -4,9 +4,17 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
-import LeaveRoomButton from '@/components/leave-room';
-import { useSSE } from '@/hooks/useSSE'; // Import the useSSE hook
+import { useSSE } from '@/hooks/useSSE';
 import { GameState } from '@/shared/schema';
+import { useAuth } from '@/contexts/AuthContext';
+import LoadingScreen from '@/components/LoadingScreen';
+import { RoomInfo } from '@/components/Room/Info';
+import { PlayerList } from '@/components/Room/PlayerList';
+import { MusicPlayer } from '@/components/Room/MusicPlayer';
+import { SongQueue } from '@/components/Room/SongQueue';
+import { NavigationBar } from '@/components/navigation-bar';
+import { isEmpty } from 'lodash';
+import { ChatBox } from '@/components/Room/ChatBox';
 
 export default function RoomPage() {
 	const [initialState, setInitialState] = useState<GameState | null>(null);
@@ -14,10 +22,11 @@ export default function RoomPage() {
 	const roomCode = params.roomCode as string;
 	const { toast } = useToast();
 	const { gameState } = useSSE(roomCode);
+	const { loading } = useAuth();
 
 	useEffect(() => {
 		if (gameState) {
-			setInitialState(gameState); // Update the state when the gameState changes
+			setInitialState(gameState);
 		}
 		console.log('gameState when SSE', gameState);
 	}, [gameState]);
@@ -42,33 +51,59 @@ export default function RoomPage() {
 		fetchGameState();
 	}, [roomCode, toast]);
 
+	if (loading || isEmpty(initialState)) {
+		return <LoadingScreen />;
+	}
+
 	console.log('initialState', initialState);
 
+	// TODO: UPDATE MUSICPLAYER PROPS
+
 	return (
-		<>
-			<div>Room page {roomCode}</div>
-			<div className='w-48 mt-4'>
-				<LeaveRoomButton roomCode={roomCode} />
-			</div>
-			{/* Use the gameState from SSE */}
-			{initialState && (
-				<div>
-					<p>Current Round: {initialState.currentRound}</p>
-					<p>Total Rounds: {initialState.totalRounds}</p>
-					<p>Is Playing: {initialState.isPlaying ? 'Yes' : 'No'}</p>
+		<div className='min-h-screen flex flex-col'>
+			<NavigationBar />
+			<main className='flex-1 container mx-auto px-4 py-6'>
+				<div className='flex flex-col lg:flex-row gap-6'>
+					<div className='lg:w-1/4'>
+						{initialState && (
+							<>
+								<RoomInfo
+									room={initialState.room}
+									hostUserName={''}
+									currentRound={0}
+									totalRounds={0}
+								/>
+								<PlayerList
+									players={initialState.room.players || []}
+									hostId={initialState.room.hostId}
+									songsPerPlayer={initialState.room.songsPerPlayer}
+								/>
+							</>
+						)}
+					</div>
+					<div className='lg:w-2/4'>
+						<MusicPlayer
+							currentTrack={null}
+							submitter={null}
+							currentRound={0}
+							totalRounds={0}
+							isPlaying={false}
+							timeRemaining={0}
+							onPlayPause={function (): void {
+								throw new Error('Function not implemented.');
+							}}
+						/>
+						<ChatBox
+							messages={[]}
+							users={initialState.players || []}
+							onSendMessage={() => {}}
+						/>
+					</div>
+					<div className='lg:w-1/4'>
+						<SongQueue songQueue={[]} currentTrackIndex={0} submitters={{}} />
+					</div>
 				</div>
-			)}
-			{/* <CountdownOverlay countdown={gameState.countdown?.isActive ? gameState.countdown.remaining : null} />
-			<PrivateHintToast hint={gameState.privateHint} />
-			
-			<GameLayout
-				gameState={gameState}
-				onGuess={makeGuess}
-				onPlaybackControl={controlPlayback}
-				onStart={startGameMutation.mutate}
-				onLeave={leaveRoomMutation.mutate}
-				onSendMessage={sendChatMessage}
-			/> */}
-		</>
+			</main>
+		</div>
 	);
 }

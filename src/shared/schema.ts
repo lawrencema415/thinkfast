@@ -27,7 +27,9 @@ export const roomSchema = z.object({
   code: z.string(),
   players: z.array(z.object({
     user: z.custom<SupabaseUser>(),
-    role: roleSchema
+    role: roleSchema,
+    score: z.number().default(0),
+    joinedAt: z.date(),
   })),
   hostId: z.string(),
   songsPerPlayer: z.number(),
