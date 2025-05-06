@@ -16,8 +16,6 @@ export const broadcastGameState = async (roomCode: string, storage: any) => {
 
   const gameState = {
     room,
-    players,
-    songs,
     messages,
     currentTrack: room.isPlaying ? songs.find((s: any) => !s.isPlayed) : null,
     currentRound: songs.filter((s: any) => s.isPlayed).length,
@@ -25,8 +23,6 @@ export const broadcastGameState = async (roomCode: string, storage: any) => {
     isPlaying: room.isPlaying,
     timeRemaining: room.timePerSong
   };
-
-
 
   // TODO: Fix any typings of this page after schema is more defined
   // Log the actual connected clients from the clients Map

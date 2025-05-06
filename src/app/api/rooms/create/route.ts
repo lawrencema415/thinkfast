@@ -11,18 +11,12 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { songsPerPlayer, timePerSong } = body;
 
-  const room = await storage.createRoom(user, {
+  const gameState = await storage.createRoom(user, {
     songsPerPlayer,
     timePerSong,
   });
 
-  await storage.addPlayerToRoom({
-    roomId: room.id,
-    userId: user.id,
-    isHost: true,
-  });
+  await broadcastGameState(gameState.room.code, storage);
 
-  await broadcastGameState(room.code, storage);
-
-  return NextResponse.json(room);
+  return NextResponse.json(gameState);
 }

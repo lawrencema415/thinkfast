@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Song, PlayerWithUser } from '@shared/schema';
+import { Player, Song } from '@shared/schema';
 import { Music2, Volume2, VolumeX } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
@@ -9,7 +9,7 @@ import Image from 'next/image';
 
 interface MusicPlayerProps {
 	currentTrack: Song | null;
-	submitter: PlayerWithUser | null;
+	submitter: Player | null;
 	currentRound: number;
 	totalRounds: number;
 	isPlaying: boolean;
@@ -17,6 +17,7 @@ interface MusicPlayerProps {
 	onPlayPause: () => void;
 }
 
+// FIXME: Update according to schema
 export function MusicPlayer({
 	currentTrack,
 	submitter,
@@ -327,7 +328,7 @@ export function MusicPlayer({
 			)}
 
 			{/* Hidden player for actual song playback */}
-			{currentTrack && (
+			{/* {currentTrack && (
 				<div style={{ display: 'none' }}>
 					<ReactPlayer
 						ref={playerRef}
@@ -349,7 +350,7 @@ export function MusicPlayer({
 						}}
 					/>
 				</div>
-			)}
+			)} */}
 		</div>
 	);
 }

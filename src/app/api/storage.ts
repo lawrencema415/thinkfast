@@ -1,12 +1,15 @@
 import { Redis } from '@upstash/redis';
 import {
   type Room,
-  type RoomPlayer,
-  type InsertRoomPlayer,
   Song,
   Message,
+  Player,
+  GameState,
+  ROLE,
 } from "@/shared/schema";
 import { User } from '@supabase/supabase-js';
+
+// FIXME: Update according to schema
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -44,29 +47,50 @@ export class RedisStorage {
     return await redis.get(`roomCode:${roomIdOrCode}`);
   }
 
+  async saveGameState(roomId: string, gameState: GameState): Promise<void> {
+    const key = `room:${roomId}`;
+    await redis.set(key, JSON.stringify(gameState));
+  }
+
   // Room operations
-  async createRoom(user: User, options: { songsPerPlayer: number; timePerSong: number }): Promise<Room> {
+  async createRoom(user: User, options: { songsPerPlayer: number; timePerSong: number }): Promise<GameState> {
     const id = this.generateId();
     const code = generateRoomCode();
-    const createdAt = new Date();
+    const createdAt = new Date().toISOString();
+
     const room: Room = {
       id,
-      code,
-      players: [{
-        user,
-        role: 'host'
-      }],
-      hostId: user.id,
-      songsPerPlayer: options.songsPerPlayer,
-      timePerSong: options.timePerSong,
-      isActive: true,
-      isPlaying: false,
-      createdAt
+      code
     };
 
-    await redis.hset(`room:${id}`, room);
-    await redis.set(`roomCode:${code}`, id);
-    return room;
+    const gameState: GameState = {
+      id, // Add the id property
+      createdAt,
+      currentRound: 0,
+      currentTrack: null,
+      hostId: user.id,
+      isActive: true,
+      isPlaying: false,
+      messages: [],
+      players: [
+        {
+          user,
+          role: ROLE.HOST,
+        },
+      ],
+      room,
+      songs: [],
+      songsPerPlayer: options.songsPerPlayer,
+      timePerSong: options.timePerSong,
+      timeRemaining: options.timePerSong,
+      totalRounds: 0,
+    };
+
+    // Set game state
+    await redis.set(`gameState:${id}`, JSON.stringify(gameState));
+    // For room code look up
+    await redis.set(`roomCode:${room.code}`, room.id);
+    return gameState;
   }
 
   async getRoom(id: string): Promise<Room | undefined> {
@@ -86,6 +110,13 @@ export class RedisStorage {
     return room;
   }
 
+  async getGameStateByRoomCode(code: string): Promise<GameState | null> {
+    const roomId = await redis.get(`roomCode:${code}`);
+    if (!roomId) return null;
+    const state = await redis.get<string>(`gameState:${roomId}`);
+    return state ? JSON.parse(state) : null;
+  }
+
   async updateRoom(id: string, updates: Partial<Room>): Promise<Room> {
     const room = await this.getRoom(id);
     if (!room) throw new Error(`Room with id ${id} not found`);
@@ -95,101 +126,109 @@ export class RedisStorage {
     return updatedRoom;
   }
 
+  // NEED FIX?
   // Player operations
-  async addPlayerToRoom(insertPlayer: InsertRoomPlayer): Promise<RoomPlayer> {
-    // console.log('attempt to add player to room', insertPlayer);
-    const id = this.generateId();
-    const player: RoomPlayer = {
-      ...insertPlayer,
-      id,
-      score: 0,
-      songsAdded: 0,
-      joinedAt: new Date()
-    };
-
-    await redis.hset(`player:${id}`, player);
-    await redis.sadd(`room:${insertPlayer.roomId}:players`, id);
-    // console.log('added player', player)
+  async addPlayerToRoom(roomId: string, user: User): Promise<Player> {
+    const resolvedRoomId = await this.resolveRoomId(roomId);
+    if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
+  
+    const key = `gameState:${resolvedRoomId}`;
+    const json = await redis.get<string>(key);
+    if (!json) throw new Error(`Game state not found for room ${resolvedRoomId}`);
+  
+    const gameState = JSON.parse(json) as GameState;
+  
+    const player: Player = { user, role: ROLE.PLAYER };
+    gameState.players.push(player);
+  
+    await redis.set(key, JSON.stringify(gameState));
     return player;
   }
 
-  async getPlayersInRoom(roomId: string): Promise<RoomPlayer[]> {
+  async getPlayersInRoom(roomId: string): Promise<Player[]> {
     const resolvedRoomId = await this.resolveRoomId(roomId);
     if (!resolvedRoomId) return [];
   
-    const playerIds = await redis.smembers(`room:${resolvedRoomId}:players`);
-    const players = await Promise.all(
-      playerIds.map(id => redis.hgetall(`player:${id}`))
-    );
-    return players.filter(p => p && Object.keys(p).length > 0) as RoomPlayer[];
-}
+    const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
+    if (!json) return [];
+  
+    return (JSON.parse(json) as GameState).players;
+  }
 
   async getSongsForRoom(roomId: string): Promise<Song[]> {
     const resolvedRoomId = await this.resolveRoomId(roomId);
     if (!resolvedRoomId) return [];
-
-    const songIds = await redis.smembers(`room:${resolvedRoomId}:songs`);
-    const songs = await Promise.all(
-      songIds.map(id => redis.hgetall(`song:${id}`))
-    );
-    return songs.filter(Boolean) as Song[];
+  
+    const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
+    if (!json) return [];
+  
+    return (JSON.parse(json) as GameState).songs;
   }
 
   async getMessagesForRoom(roomId: string): Promise<Message[]> {
     const resolvedRoomId = await this.resolveRoomId(roomId);
     if (!resolvedRoomId) return [];
-
-    const messageIds = await redis.smembers(`room:${resolvedRoomId}:messages`);
-    const messages = await Promise.all(
-      messageIds.map(id => redis.hgetall(`message:${id}`))
-    );
-    return messages.filter(Boolean) as Message[];
+  
+    const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
+    if (!json) return [];
+  
+    return (JSON.parse(json) as GameState).messages;
   }
 
-  async addSongToRoom(roomId: string, song: Omit<Song, 'id'>): Promise<Song> {
-    const id = this.generateId();
-    const newSong = {
+  async addSongToRoom(roomId: string, song: Omit<Song, 'id' | 'isPlayed'>): Promise<Song> {
+    const resolvedRoomId = await this.resolveRoomId(roomId);
+    if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
+  
+    const key = `gameState:${resolvedRoomId}`;
+    const json = await redis.get<string>(key);
+    if (!json) throw new Error(`Game state not found for room ${resolvedRoomId}`);
+  
+    const gameState = JSON.parse(json) as GameState;
+  
+    const newSong: Song = {
       ...song,
-      id,
-      isPlayed: false
+      id: this.generateId(),
+      isPlayed: false,
     };
-
-    await redis.hset(`song:${id}`, newSong);
-    await redis.sadd(`room:${roomId}:songs`, id);
+  
+    gameState.songs.push(newSong);
+    await redis.set(key, JSON.stringify(gameState));
     return newSong;
   }
 
-  async addMessageToRoom(roomId: string, message: Omit<Message, 'id'>): Promise<Message> {
-    const id = this.generateId();
-    const newMessage = {
+  async addMessageToRoom(roomId: string, message: Omit<Message, 'id' | 'timestamp'>): Promise<Message> {
+    const resolvedRoomId = await this.resolveRoomId(roomId);
+    if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
+  
+    const key = `gameState:${resolvedRoomId}`;
+    const json = await redis.get<string>(key);
+    if (!json) throw new Error(`Game state not found for room ${resolvedRoomId}`);
+  
+    const gameState = JSON.parse(json) as GameState;
+  
+    const newMessage: Message = {
       ...message,
-      id,
-      timestamp: new Date()
+      id: this.generateId(),
+      createdAt: new Date(),
     };
-
-    await redis.hset(`message:${id}`, newMessage);
-    await redis.sadd(`room:${roomId}:messages`, id);
+  
+    gameState.messages.push(newMessage);
+    await redis.set(key, JSON.stringify(gameState));
     return newMessage;
   }
 
   async removePlayerFromRoom(roomId: string, userId: string): Promise<void> {
-      console.log('Removing player from room:', roomId, userId);
-      // Get all player IDs for the room
-      const playerIds = await redis.smembers(`room:${roomId}:players`);
-      
-      // Find the player ID that matches the user ID
-      const players = await Promise.all(
-          playerIds.map(id => redis.hgetall(`player:${id}`))
-      );
-      
-      const playerToRemove = players.find(p => p?.userId === userId);
-      
-      if (playerToRemove) {
-          // Remove player from the room's player set
-          await redis.srem(`room:${roomId}:players`, playerToRemove.id);
-          // Delete the player's hash
-          await redis.del(`player:${playerToRemove.id}`);
-      }
+    const resolvedRoomId = await this.resolveRoomId(roomId);
+    if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
+  
+    const key = `gameState:${resolvedRoomId}`;
+    const json = await redis.get<string>(key);
+    if (!json) throw new Error(`Game state not found for room ${resolvedRoomId}`);
+  
+    const gameState = JSON.parse(json) as GameState;
+    gameState.players = gameState.players.filter(p => p.user.id !== userId);
+  
+    await redis.set(key, JSON.stringify(gameState));
   }
 }
 

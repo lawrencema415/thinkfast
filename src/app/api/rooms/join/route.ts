@@ -5,62 +5,33 @@ import { broadcastGameState } from '@/lib/broadcast';
 
 export async function POST(req: Request) {
   try {
-    // Verify authentication using our server-side auth helper
     const { user, response } = await verifyAuthInRouteHandler();
-    
-    // If not authenticated, return the error response
-    if (!user) {
-      return response;
-    }
+    if (!user) return response;
 
     const body = await req.json();
     const { roomCode } = body;
 
-    // console.log('attempt to join room with code', roomCode);
-
-    // Find room by code using Redis storage
-    const room = await storage.getRoomByCode(roomCode);
-
-    // console.log('room found', room)
-
-    if (!room) {
+    const roomId = await storage.resolveRoomId(roomCode);
+    if (!roomId) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    if (!room.isActive) {
+    const gameState = await storage.getGameStateByRoomCode(roomCode);
+    if (!gameState || !gameState.isActive) {
       return NextResponse.json({ error: 'Room is not active' }, { status: 400 });
     }
 
-    // Get players in room
-    const players = await storage.getPlayersInRoom(room.id);
-
-    // Check if user is already in the room
-    const existingPlayer = players.find(
-      (player) => player.userId === user.id
-    );
-
-    if (existingPlayer) {
+    const isAlreadyInRoom = gameState.players.some(p => p.user.id === user.id);
+    if (isAlreadyInRoom) {
       return NextResponse.json({ error: 'Already in room' }, { status: 400 });
     }
 
-    // Add player to room using Redis storage
-    await storage.addPlayerToRoom({
-      roomId: room.id,
-      userId: user.id,
-      isHost: false
-    });
-
-    // console.log('player added to room', room.id)
-
-    // Broadcast updated game state to all players
+    await storage.addPlayerToRoom(roomCode, user);
     await broadcastGameState(roomCode, storage);
 
-    return NextResponse.json(room);
+    return NextResponse.json(gameState.room);
   } catch (error) {
     console.error('Error joining room:', error);
-    return NextResponse.json(
-      { error: 'Failed to join room' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to join room' }, { status: 500 });
   }
 }

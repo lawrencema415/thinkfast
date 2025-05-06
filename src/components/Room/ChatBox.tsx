@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Message, PlayerWithUser } from '@shared/schema';
+import { Message, Player } from '@shared/schema';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,7 +11,7 @@ import {
 
 interface ChatBoxProps {
 	messages: Message[];
-	users: PlayerWithUser[];
+	users: Player[];
 	onSendMessage: (content: string) => void;
 	isGuessing?: boolean;
 }

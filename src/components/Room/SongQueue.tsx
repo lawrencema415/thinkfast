@@ -10,6 +10,7 @@ interface SongQueueProps {
 	submitters: Record<string, User>;
 }
 
+// FIXME: Update according to schema
 export function SongQueue({
 	songQueue,
 	currentTrackIndex,
