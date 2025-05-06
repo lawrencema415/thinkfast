@@ -3,16 +3,16 @@
 import { clients, sseEncoder as encoder } from './sse-clients';
 
 // TODO: Fix any typings of this page after schema is more defined
-export const broadcastGameState = async (roomId: string, storage: any) => {
-  const room = await storage.getRoom(roomId);
+export const broadcastGameState = async (roomCode: string, storage: any) => {
+  const room = await storage.getRoomByCode(roomCode);
   if (!room) {
-    console.error('No room to broadcast', roomId);
+    console.error('No room to broadcast', roomCode);
     return;
   }
 
-  const players = await storage.getPlayersInRoom(roomId);
-  const songs = await storage.getSongsForRoom(roomId);
-  const messages = await storage.getMessagesForRoom(roomId);
+  const players = await storage.getPlayersInRoom(room.id);
+  const songs = await storage.getSongsForRoom(room.id);
+  const messages = await storage.getMessagesForRoom(room.id);
 
   const gameState = {
     room,
@@ -30,8 +30,8 @@ export const broadcastGameState = async (roomId: string, storage: any) => {
 
   // TODO: Fix any typings of this page after schema is more defined
   // Log the actual connected clients from the clients Map
-  console.log(`Connected clients (${clients.size}):`, Array.from(clients.keys()));
-  console.log('Players to broadcast to:', players.map((p: any) => p.userId));
+  // console.log(`Connected clients (${clients.size}):`, Array.from(clients.keys()));
+  // console.log('Players to broadcast to:', players.map((p: any) => p.userId));
 
   for (const player of players) {
     // Check if this player has an active connection

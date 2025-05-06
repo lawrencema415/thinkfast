@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     await storage.removePlayerFromRoom(room.id, user.id);
 
     // Broadcast updated game state to all players
-    await broadcastGameState(room.id, storage);
+    await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({ success: true });
   } catch (error) {

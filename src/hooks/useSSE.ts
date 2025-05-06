@@ -13,7 +13,7 @@ interface PingMessage extends BaseSSEMessage {
 interface GameMessage extends BaseSSEMessage {
   type: 'system' | 'chat' | 'guess' | 'gameState';
   payload: {
-    roomId?: string;
+    roomCode?: string;
     userId?: string;
     content?: string;
     timestamp?: string;
@@ -23,7 +23,7 @@ interface GameMessage extends BaseSSEMessage {
 
 type SSEMessage = PingMessage | GameMessage;
 
-export const useSSE = (roomId?: string) => {
+export const useSSE = (roomCode?: string) => {
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -43,11 +43,11 @@ export const useSSE = (roomId?: string) => {
         : 'http://localhost:3000';
     
     // Add userId to the SSE URL if provided
-    const sseUrl = roomId
-        ? `${baseURL}/api/events?roomId=${encodeURIComponent(roomId)}`
+    const sseUrl = roomCode
+        ? `${baseURL}/api/events?roomCode=${encodeURIComponent(roomCode)}`
         : `${baseURL}/api/events`;
     
-    // console.log('Connecting to SSE at:', sseUrl);
+    console.log('Connecting to SSE at:', sseUrl);
 
     const setupEventSource = () => {
         if (eventSourceRef.current) {
@@ -136,7 +136,7 @@ export const useSSE = (roomId?: string) => {
     };
   // Add gameState here will cause infinite loop
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
+  }, [roomCode]);
 
   const sendMessage = useCallback((message: string) => {
     if (!message.trim()) {
@@ -150,8 +150,8 @@ export const useSSE = (roomId?: string) => {
     
     const encodedMessage = encodeURIComponent(message);
     // Include userId in the URL if available
-    const url = roomId
-      ? `${baseURL}/api/events?message=${encodedMessage}&roomId=${encodeURIComponent(roomId)}`
+    const url = roomCode
+      ? `${baseURL}/api/events?message=${encodedMessage}&roomCode=${encodeURIComponent(roomCode)}`
       : `${baseURL}/api/events?message=${encodedMessage}`;
     
     // console.log('Sending message to:', url);
@@ -170,7 +170,7 @@ export const useSSE = (roomId?: string) => {
       .catch(error => {
         console.error('Error sending message:', error);
     });
-  }, [roomId]);
+  }, [roomCode]);
   
   return {
     isConnected,

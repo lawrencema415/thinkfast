@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     isHost: true,
   });
 
-  await broadcastGameState(room.id, storage);
+  await broadcastGameState(room.code, storage);
 
   return NextResponse.json(room);
 }
