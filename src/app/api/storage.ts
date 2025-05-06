@@ -227,6 +227,32 @@ export class RedisStorage {
     return json.songs;
   }
 
+  async saveMessage(message: any): Promise<Message[]>{
+    // First, add the message to the game state
+    const roomId = message.roomId;
+    const key = `gameState:${roomId}`;
+    const json = await redis.get<string>(key);
+    
+    if (!json) throw new Error(`Game state not found for room ${roomId}`);
+    
+    let gameState: GameState;
+    
+    try {
+      gameState = typeof json === 'string' ? JSON.parse(json) : json;
+    } catch (error) {
+      console.error('Error parsing game state:', error);
+      throw new Error('Failed to parse game state');
+    }
+    
+    // Add the message to the game state's messages array
+    gameState.messages.push(message);
+    
+    // Save the updated game state back to Redis
+    await redis.set(key, JSON.stringify(gameState));
+    
+    return message;
+  }
+
 
   async getMessagesForRoom(roomId: string): Promise<Message[]> {
     const resolvedRoomId = await this.resolveRoomId(roomId);
@@ -280,20 +306,7 @@ export class RedisStorage {
     return newMessage;
   }
 
-  // async saveMessage(message: any) {
-  //   const key = message:${message.id};
-  //   await redis.set(key, JSON.stringify(message));
-
-  //   // Add to room's message list
-  //   const roomMessagesKey = room:${message.roomId}:messages;
-  //   await redis.zadd(roomMessagesKey, Date.now(), message.id);
-
-  //   // Expire after 24 hours
-  //   await redis.expire(key, 60 * 60 * 24);
-  //   await redis.expire(roomMessagesKey, 60 * 60 * 24);
-
-  //   return message;
-  // }
+  
 
   // async getMessagesForRoom(roomId: string): Promise<Message[]> {
   //   const room = await this.getRoom(roomId);
