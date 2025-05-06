@@ -8,13 +8,18 @@ interface RoomInfoProps {
 	hostUserName: string;
 	currentRound: number;
 	totalRounds: number;
+	songsPerPlayer: number;
+	timePerSong: number;
 }
 
+// FIXME: Update according to schema
 export function RoomInfo({
 	room,
 	hostUserName,
 	currentRound,
 	totalRounds,
+	songsPerPlayer,
+	timePerSong,
 }: RoomInfoProps) {
 	const { toast } = useToast();
 	const { code } = room;
@@ -71,24 +76,16 @@ export function RoomInfo({
 				</div>
 				<div className='flex justify-between'>
 					<span className='text-gray-300'>Songs Per Player:</span>
-					<span className='font-medium'>{room.songsPerPlayer || 'N/A'}</span>
+					<span className='font-medium'>{songsPerPlayer || 'N/A'}</span>
 				</div>
 				<div className='flex justify-between'>
 					<span className='text-gray-300'>Time Per Song:</span>
 					<span className='font-medium'>
-						{room.timePerSong ? `${room.timePerSong} sec` : 'N/A'}
+						{timePerSong ? `${timePerSong} sec` : 'N/A'}
 					</span>
 				</div>
 			</div>
 			<div className='mt-5'>
-				{/* <Button
-					variant='destructive'
-					className='w-full'
-					onClick={() => {}}
-					disabled={leaveRoomMutation.isPending}
-				>
-					{leaveRoomMutation.isPending ? 'Leaving...' : 'Leave Room'}
-				</Button> */}
 				<LeaveButton roomCode={code} />
 			</div>
 		</div>

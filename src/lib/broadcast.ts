@@ -16,8 +16,6 @@ export const broadcastGameState = async (roomCode: string, storage: any) => {
 
   const gameState = {
     room,
-    players,
-    songs,
     messages,
     currentTrack: room.isPlaying ? songs.find((s: any) => !s.isPlayed) : null,
     currentRound: songs.filter((s: any) => s.isPlayed).length,

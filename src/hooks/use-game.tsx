@@ -4,7 +4,7 @@ import { createContext, ReactNode, useContext } from 'react';
 import { useMutation, UseMutationResult } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import type { InsertRoom, Room } from '../shared/schema';
+import type { GameState, Room } from '../shared/schema';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -12,9 +12,9 @@ type GameContextType = {
 	isLoading: boolean;
 	error: Error | null;
 	createRoomMutation: UseMutationResult<
-		Room,
+		GameState,
 		Error,
-		Omit<InsertRoom, 'hostId' | 'code'>
+		{ songsPerPlayer: number; timePerSong: number }
 	>;
 	joinRoomMutation: UseMutationResult<Room, Error, string>;
 	leaveRoomMutation: UseMutationResult<void, Error, string>;
@@ -28,20 +28,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
 	const router = useRouter();
 
 	// Mutation to create a new room
-	const createRoomMutation = useMutation({
-		mutationFn: async (roomData: Omit<InsertRoom, 'hostId' | 'code'>) => {
+	const createRoomMutation = useMutation<
+		GameState,
+		Error,
+		{ songsPerPlayer: number; timePerSong: number }
+	>({
+		mutationFn: async ({ songsPerPlayer, timePerSong }) => {
 			const res = await apiRequest('POST', '/api/rooms/create', {
 				action: 'create',
-				...roomData,
+				songsPerPlayer,
+				timePerSong,
 				userId: user?.id,
 			});
 			return await res.json();
 		},
-		onSuccess: (room: Room) => {
+		onSuccess: (gameState: GameState) => {
 			queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
 			toast({
 				title: 'Room created',
-				description: `Room code: ${room.code}`,
+				description: `Room code: ${gameState.room.code}`,
 			});
 		},
 		onError: (error: Error) => {

@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Users, Clock } from 'lucide-react';
 import { useGame } from '@/hooks/use-game';
 import { useRouter } from 'next/navigation';
+import { GameState } from '@/shared/schema';
 
 interface ReadyToPlayModalProps {
 	isOpen: boolean;
@@ -35,10 +36,10 @@ export function ReadyToPlayModal({
 				timePerSong: secondsPerSong,
 			},
 			{
-				onSuccess: (room) => {
+				onSuccess: (gameState: GameState) => {
 					onOpenChange(false);
 					setTimeout(() => {
-						router.push(`/room/${room.code}`);
+						router.push(`/room/${gameState.room.code}`);
 					}, 150);
 				},
 			}

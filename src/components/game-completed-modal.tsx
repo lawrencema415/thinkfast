@@ -10,12 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials, getUserColor } from '@/lib/utils';
 import { Trophy, Share2 } from 'lucide-react';
-import { PlayerWithUser } from '@shared/schema';
+import { Player } from '@shared/schema';
 
 interface GameCompletedModalProps {
 	isOpen: boolean;
 	onOpenChange: (open: boolean) => void;
-	players: PlayerWithUser[];
+	players: Player[];
 }
 
 export function GameCompletedModal({
@@ -31,7 +31,9 @@ export function GameCompletedModal({
 		const results = `ThinkFast Results:\n${sortedPlayers
 			.map(
 				(p, i) =>
-					`${i + 1}. ${p.user.user_metadata.display_name}: ${p.score || 0} points`
+					`${i + 1}. ${p.user.user_metadata.display_name}: ${
+						p.score || 0
+					} points`
 			)
 			.join('\n')}`;
 
@@ -62,7 +64,7 @@ export function GameCompletedModal({
 				<div className='mt-6 space-y-4'>
 					{sortedPlayers.map((player, index) => (
 						<div
-							key={player.id}
+							key={player.user.id}
 							className={`flex items-center p-4 rounded-lg transition-colors ${
 								index === 0
 									? 'bg-primary/15 border border-primary/30'

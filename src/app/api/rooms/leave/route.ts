@@ -5,37 +5,28 @@ import { broadcastGameState } from '@/lib/broadcast';
 
 export async function POST(req: Request) {
   try {
-    // Verify authentication using our server-side auth helper
     const { user, response } = await verifyAuthInRouteHandler();
-    
-    // If not authenticated, return the error response
-    if (!user) {
-      return response;
-    }
+    if (!user) return response;
 
     const body = await req.json();
     const { roomCode } = body;
 
-    console.log('leaving this room code', roomCode)
-
-    // Find room by code using Redis storage
-    const room = await storage.getRoomByCode(roomCode);
-    if (!room) {
-      return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+    const gameState = await storage.getGameStateByRoomCode(roomCode);
+    if (!gameState) {
+      return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
     }
 
-    // Remove player from room using Redis storage
-    await storage.removePlayerFromRoom(room.id, user.id);
+    const wasInRoom = gameState.players.some(p => p.user.id === user.id);
+    if (!wasInRoom) {
+      return NextResponse.json({ error: 'User not in room' }, { status: 400 });
+    }
 
-    // Broadcast updated game state to all players
+    await storage.removePlayerFromRoom(roomCode, user.id);
     await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error leaving room:', error);
-    return NextResponse.json(
-      { error: 'Failed to leave room' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to leave room' }, { status: 500 });
   }
 }

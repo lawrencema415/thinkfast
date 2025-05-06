@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Song, User } from '@shared/schema';
+import { Song } from '@shared/schema';
 import { MusicWave } from '@/components/ui/music-wave';
 import { useToast } from '@/hooks/use-toast';
 import ReactPlayer from 'react-player';
@@ -7,9 +7,11 @@ import ReactPlayer from 'react-player';
 interface SongQueueProps {
 	songQueue: Song[];
 	currentTrackIndex: number;
-	submitters: Record<string, User>;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	submitters: any;
 }
 
+// FIXME: Update according to schema
 export function SongQueue({
 	songQueue,
 	currentTrackIndex,
@@ -130,9 +132,10 @@ export function SongQueue({
 					<div style={{ display: 'none' }}>
 						<ReactPlayer
 							ref={playerRef}
-							url={`https://www.youtube.com/watch?v=${
-								songQueue.find((s) => s.id === previewingSongId)?.sourceId
-							}`}
+							// url={`https://www.youtube.com/watch?v=${
+							// 	songQueue.find((s) => s.id === previewingSongId)?.sourceId
+							// }`}
+							url={`https://youtu.be/gbxxpSNE5o4`}
 							playing={isPlaying}
 							onReady={() => {
 								toast({

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Message, PlayerWithUser } from '@shared/schema';
+import { Message, Player } from '@shared/schema';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,14 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ChatBoxProps {
 	messages: Message[];
-	users: PlayerWithUser[];
+	users: Player[];
 	roomCode: string; // Add roomCode prop
 	isGuessing?: boolean;
 }
 
 export function ChatBox({
 	messages,
-	users,
+	// users,
 	roomCode,
 	isGuessing = false,
 }: ChatBoxProps) {

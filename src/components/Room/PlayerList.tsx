@@ -1,8 +1,8 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User } from '@supabase/supabase-js';
+import { Player } from '@/shared/schema';
 
 interface PlayerListProps {
-	players: User[];
+	players: Player[];
 	hostId: string;
 	songsPerPlayer: number;
 }
@@ -21,9 +21,9 @@ PlayerListProps) {
 				Players ({players.length})
 			</h2>
 			<div className='space-y-3'>
-				{players.map((player) => (
+				{players.map(({ user }) => (
 					<div
-						key={player.id}
+						key={user?.id}
 						className='flex items-center justify-between p-2 rounded-lg bg-surface bg-opacity-50 hover:bg-opacity-70 transition-colors'
 					>
 						<div className='flex items-center space-x-3'>
@@ -32,8 +32,8 @@ PlayerListProps) {
 							</Avatar>
 							<div>
 								<p className='font-medium'>
-									{player?.user_metadata?.display_name}
-									{player.id === hostId && (
+									{user?.user_metadata?.display_name}
+									{user?.id === hostId && (
 										<span className='text-xs text-primary ml-1'>(Host)</span>
 									)}
 								</p>

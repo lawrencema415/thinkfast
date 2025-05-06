@@ -12,10 +12,11 @@ import { RoomInfo } from '@/components/Room/Info';
 import { PlayerList } from '@/components/Room/PlayerList';
 import { MusicPlayer } from '@/components/Room/MusicPlayer';
 import { SongQueue } from '@/components/Room/SongQueue';
-import { NavigationBar } from '@/components/navigation-bar';
+import { NavigationBar } from '@/components/NavigationBar';
 import { isEmpty } from 'lodash';
 import { ChatBox } from '@/components/Room/ChatBox';
 
+// FIXME: Update according to schema
 export default function RoomPage() {
 	const [initialState, setInitialState] = useState<GameState | null>(null);
 	const params = useParams();
@@ -70,13 +71,15 @@ export default function RoomPage() {
 								<RoomInfo
 									room={initialState.room}
 									hostUserName={''}
-									currentRound={0}
-									totalRounds={0}
+									currentRound={initialState.currentRound}
+									totalRounds={initialState.totalRounds}
+									songsPerPlayer={initialState.songsPerPlayer}
+									timePerSong={initialState.timePerSong}
 								/>
 								<PlayerList
-									players={initialState.room.players || []}
-									hostId={initialState.room.hostId}
-									songsPerPlayer={initialState.room.songsPerPlayer}
+									players={initialState.players || []}
+									hostId={initialState.hostId}
+									songsPerPlayer={initialState.songsPerPlayer}
 								/>
 							</>
 						)}
