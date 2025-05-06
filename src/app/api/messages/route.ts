@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { storage } from '../storage';
-import { broadcastMessage } from '@/lib/broadcast';
+import { broadcastGameState } from '@/lib/broadcast';
 
 export async function POST(req: Request) {
   try {
@@ -24,15 +24,15 @@ export async function POST(req: Request) {
     }
 
     // Find room by code using Redis storage
-    const room = await storage.getRoomByCode(roomCode);
-    if (!room) {
+    const roomId = await storage.getRoomByCode(roomCode);
+    if (!roomId) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
     // Create a message object
     const message = {
       id: crypto.randomUUID(),
-      roomId: room.id,
+      roomId: roomId,
       userId: user.id,
       content,
       type: messageType,
@@ -40,10 +40,10 @@ export async function POST(req: Request) {
     };
 
     // Store the message in Redis (optional, depending on if you want message history)
-    // await storage.saveMessage(message);
+    await storage.saveMessage(message);
 
     // Broadcast the message to all players in the room
-    await broadcastMessage(roomCode, message, storage);
+    await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({ success: true, message });
   } catch (error) {
