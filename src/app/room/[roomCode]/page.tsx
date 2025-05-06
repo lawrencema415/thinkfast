@@ -12,7 +12,7 @@ import { RoomInfo } from '@/components/Room/Info';
 import { PlayerList } from '@/components/Room/PlayerList';
 import { MusicPlayer } from '@/components/Room/MusicPlayer';
 import { SongQueue } from '@/components/Room/SongQueue';
-import { NavigationBar } from '@/components/navigation-bar';
+import { NavigationBar } from '@/components/NavigationBar';
 import { isEmpty } from 'lodash';
 import { ChatBox } from '@/components/Room/ChatBox';
 

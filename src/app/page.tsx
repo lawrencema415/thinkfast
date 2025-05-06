@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { NavigationBar } from '@/components/navigation-bar';
+import { NavigationBar } from '@/components/NavigationBar';
 import { Footer } from '@/components/footer';
 import { ReadyToPlayModal } from '@/components/ready-to-play-modal';
 import { useAuth } from '@/contexts/AuthContext';
