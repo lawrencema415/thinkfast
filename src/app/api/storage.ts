@@ -92,20 +92,20 @@ export class RedisStorage {
     return gameState;
   }
 
-  async getRoom(id: string): Promise<Room | undefined> {
-    const room = await redis.hgetall(`room:${id}`);
-    return room ? room as Room : undefined;
-  }
+  // not used
+  // async getRoom(roomId: string): Promise<Room | null> {
+  //   const key = `room:${roomId}`;
+  //   return await redis.get<Room>(key);
+  // }
+  
 
-  async getRoomByCode(code: string): Promise<Room | undefined> {
-    const roomId = await redis.get(`roomCode:${code}`);
-    if (!roomId) return undefined;
-    const room = await this.getRoom(roomId as string);
-    return room;
+  async getRoomByCode(code: string): Promise<string | null> {
+    return await redis.get<string>(`roomCode:${code}`)
   }
 
   async getGameStateByRoomCode(code: string): Promise<GameState | null> {
-    const roomId = await redis.get<string>(`roomCode:${code}`);
+    // const roomId = await redis.get<string>(`roomCode:${code}`);
+    const roomId = await this.getRoomByCode(code);
     if (!roomId) return null;
   
     // Retrieve the game state as a string
@@ -124,25 +124,39 @@ export class RedisStorage {
     return state as GameState | null;
   }
 
-  async updateRoom(id: string, updates: Partial<Room>): Promise<Room> {
-    const room = await this.getRoom(id);
-    if (!room) throw new Error(`Room with id ${id} not found`);
+  async updateRoom(code: string, updates: Partial<Room>): Promise<Room> {
+    const roomId = await this.getRoomByCode(code);
+    if (!roomId) throw new Error(`Room with code '${code}' not found.`);
 
-    const updatedRoom = { ...room, ...updates };
-    await redis.hset(`room:${id}`, updatedRoom); // Ensure the room is updated correctly
+    const key = `gameState:${roomId}`;
+    const json = await redis.get<string>(key);
+
+    let gameState: GameState;
+    
+    // Try to parse json string, or assume it's already an object
+    try {
+      gameState = typeof json === 'string' ? JSON.parse(json) : json;
+    } catch (error) {
+      console.error('Error parsing game state:', error);
+      throw new Error('Failed to parse game state');
+    }
+
+    // TODO: not working
+    const updatedRoom = { ...gameState.room, ...updates };
+    await redis.set(key, JSON.stringify(gameState));
     return updatedRoom;
   }
 
   // Player operations
-  async addPlayerToRoom(roomId: string, user: User): Promise<Player> {
-    const resolvedRoomId = await this.resolveRoomId(roomId);
-    if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
+  async addPlayerToRoom(roomCode: string, user: User): Promise<Player> {
+    const roomId = await this.getRoomByCode(roomCode);
+    if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
     
-    const key = `gameState:${resolvedRoomId}`;
+    const key = `gameState:${roomId}`;
     const json = await redis.get<string>(key);
     
     // Check if json is a valid string
-    if (!json) throw new Error(`Game state not found for room ${resolvedRoomId}`);
+    if (!json) throw new Error(`Game state not found for room ${roomId}`);
   
     let gameState: GameState;
     
@@ -161,12 +175,41 @@ export class RedisStorage {
     await redis.set(key, JSON.stringify(gameState));
     return player;
   }
+  
+  async removePlayerFromRoom(roomCode: string, userId: string): Promise<void> {
+    const roomId = await this.getRoomByCode(roomCode);
+    if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
+    
+    const key = `gameState:${roomId}`;
+    const json = await redis.get<string>(key);
+    
+    // Check if json is valid
+    if (!json) throw new Error(`Game state not found for room ${roomId}`);
+    
+    let gameState: GameState;
+    
+    // Try to parse json string, or assume it's already an object
+    try {
+      gameState = typeof json === 'string' ? JSON.parse(json) : json;
+    } catch (error) {
+      console.error('Error parsing game state:', error);
+      throw new Error('Failed to parse game state');
+    }
+  
+    // Remove the player from the game state
+    gameState.players = gameState.players.filter(p => p.user.id !== userId);
+    
+    // Save the updated game state back to Redis
+    await redis.set(key, JSON.stringify(gameState));
+  }
 
   async getPlayersInRoom(roomId: string): Promise<Player[]> {
-    const resolvedRoomId = await this.resolveRoomId(roomId);
-    if (!resolvedRoomId) return [];
+    // const resolvedRoomId = await this.resolveRoomId(roomId);
+    // if (!resolvedRoomId) return [];
+
+    if (!roomId) return [];
   
-    const json = await redis.get<GameState>(`gameState:${resolvedRoomId}`);
+    const json = await redis.get<GameState>(`gameState:${roomId}`);
     if (!json) return [];
   
     return json.players;
@@ -183,6 +226,7 @@ export class RedisStorage {
   
     return json.songs;
   }
+
 
   async getMessagesForRoom(roomId: string): Promise<Message[]> {
     const resolvedRoomId = await this.resolveRoomId(roomId);
@@ -269,33 +313,6 @@ export class RedisStorage {
   //   return (JSON.parse(json) as GameState).messages;
   // }
 
-  // TODO: Need to update client
-  async removePlayerFromRoom(roomId: string, userId: string): Promise<void> {
-    const resolvedRoomId = await this.resolveRoomId(roomId);
-    if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
-    
-    const key = `gameState:${resolvedRoomId}`;
-    const json = await redis.get<string>(key);
-    
-    // Check if json is valid
-    if (!json) throw new Error(`Game state not found for room ${resolvedRoomId}`);
-    
-    let gameState: GameState;
-    
-    // Try to parse json string, or assume it's already an object
-    try {
-      gameState = typeof json === 'string' ? JSON.parse(json) : json;
-    } catch (error) {
-      console.error('Error parsing game state:', error);
-      throw new Error('Failed to parse game state');
-    }
-  
-    // Remove the player from the game state
-    gameState.players = gameState.players.filter(p => p.user.id !== userId);
-    
-    // Save the updated game state back to Redis
-    await redis.set(key, JSON.stringify(gameState));
-  }
 }
 
 export const storage = new RedisStorage();

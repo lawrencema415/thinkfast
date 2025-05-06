@@ -99,18 +99,15 @@ export async function GET(request: NextRequest) {
       // Get the roomId from the URL parameters
       const roomCode = url.searchParams.get('roomCode');
       
-      // If we have a roomId, handle the player leaving the room
       if (roomCode && userId) {
         // Use an async IIFE to handle the async operations
         (async () => {
           try {
-            // Resolve the room ID (could be a code or UUID)
-            const room = await storage.getRoomByCode(roomCode);
-            const roomId = room?.id;
+            const roomId = await storage.getRoomByCode(roomCode);
 
             if (roomId) {
               // Remove the player from the room
-              await storage.removePlayerFromRoom(roomId, userId);
+              await storage.removePlayerFromRoom(roomCode, userId);
               
               // Broadcast the updated game state to all remaining players
               await broadcastGameState(roomCode, storage);
