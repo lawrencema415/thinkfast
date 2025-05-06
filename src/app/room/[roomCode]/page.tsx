@@ -100,7 +100,7 @@ export default function RoomPage() {
 							messages={gameState?.messages || []}
 							roomCode={roomCode}
 							users={initialState.players || []}
-							onSendMessage={() => {}}
+							// onSendMessage={() => {}}
 						/>
 					</div>
 					<div className='lg:w-1/4'>
