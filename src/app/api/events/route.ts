@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { clients, sseEncoder as encoder } from '@/lib/sse-clients';
+import { storage } from '../storage';
+import { broadcastGameState } from '@/lib/broadcast';
 
 // Use the global clients map
 const messages: string[] = [];
@@ -93,6 +95,30 @@ export async function GET(request: NextRequest) {
         clearInterval((controller as any).pingIntervalId);
       }
       clients.delete(userId);
+      
+      // Get the roomId from the URL parameters
+      const roomId = url.searchParams.get('roomId');
+      
+      // If we have a roomId, handle the player leaving the room
+      if (roomId && userId) {
+        // Use an async IIFE to handle the async operations
+        (async () => {
+          try {
+            // Resolve the room ID (could be a code or UUID)
+            const resolvedRoomId = await storage.resolveRoomId(roomId);
+            if (resolvedRoomId) {
+              // Remove the player from the room
+              await storage.removePlayerFromRoom(resolvedRoomId, userId);
+              
+              // Broadcast the updated game state to all remaining players
+              await broadcastGameState(resolvedRoomId, storage);
+              console.log(`Player ${userId} removed from room ${roomId} due to disconnection`);
+            }
+          } catch (error) {
+            console.error(`Error handling disconnection for user ${userId} in room ${roomId}:`, error);
+          }
+        })();
+      }
     }
   });
 
