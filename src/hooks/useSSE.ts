@@ -29,13 +29,6 @@ export const useSSE = (roomCode?: string) => {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // console.log('messages from useSSE hook:', messages);
-  // console.log('gameState from useSSE hook:', gameState);
-
-  useEffect(() => {
-    console.log('gameState updated:', gameState);
-  }, [gameState]);
   
   useEffect(() => {
     const baseURL = process.env.NODE_ENV === 'production'
@@ -47,7 +40,6 @@ export const useSSE = (roomCode?: string) => {
         ? `${baseURL}/api/events?roomCode=${encodeURIComponent(roomCode)}`
         : `${baseURL}/api/events`;
     
-    console.log('Connecting to SSE at:', sseUrl);
 
     const setupEventSource = () => {
         if (eventSourceRef.current) {
@@ -72,7 +64,7 @@ export const useSSE = (roomCode?: string) => {
             
             try {
                 const data: SSEMessage = JSON.parse(event.data);
-                console.log('SSE message parsed:', data);
+                console.log('Message from SSE', data);
     
                 if ('payload' in data) {
                     // Handle game-related messages
@@ -108,7 +100,6 @@ export const useSSE = (roomCode?: string) => {
         };
     };
 
-    console.log('gameState from useSSE', gameState)
     
     setupEventSource();
     
@@ -135,7 +126,6 @@ export const useSSE = (roomCode?: string) => {
         setIsConnected(false);
     };
   // Add gameState here will cause infinite loop
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode]);
 
   const sendMessage = useCallback((message: string) => {

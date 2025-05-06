@@ -11,15 +11,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { roomCode } = body;
 
-    console.log('Leaving room:', roomCode);
-
-    // Resolve room ID from room code
-    const roomId = await storage.resolveRoomId(roomCode);
-    if (!roomId) {
-      return NextResponse.json({ error: 'Room not found' }, { status: 404 });
-    }
-
-    const gameState = await storage.getGameStateByRoomCode(roomId);
+    const gameState = await storage.getGameStateByRoomCode(roomCode);
     if (!gameState) {
       return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
     }
@@ -29,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not in room' }, { status: 400 });
     }
 
-    await storage.removePlayerFromRoom(roomId, user.id);
+    await storage.removePlayerFromRoom(roomCode, user.id);
     await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({ success: true });

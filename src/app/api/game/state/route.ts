@@ -9,13 +9,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Room Code is required' }, { status: 400 });
   }
 
-  const roomId = await storage.resolveRoomId(roomCode);
-
-  if (!roomId) {
-    return NextResponse.json({ error: 'Room not found' }, { status: 404 });
-  }
-
-  const gameState = await storage.getRoomByCode(roomId);
+  const gameState = await storage.getGameStateByRoomCode(roomCode);
 
   if (!gameState) {
     return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
