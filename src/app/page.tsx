@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { NavigationBar } from '@/components/NavigationBar';
-import { Footer } from '@/components/footer';
+import { Footer } from '@/components/Footer';
 import { ReadyToPlayModal } from '@/components/ready-to-play-modal';
 import { useAuth } from '@/contexts/AuthContext';
 import { HeroSection } from '@/components/Home/HeroSection';

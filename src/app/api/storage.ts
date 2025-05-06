@@ -54,7 +54,7 @@ export class RedisStorage {
   async createRoom(user: User, options: { songsPerPlayer: number; timePerSong: number }): Promise<GameState> {
     const id = this.generateId();
     const code = generateRoomCode();
-    const createdAt = new Date().toISOString();
+    const createdAt = new Date();
 
     const room: Room = {
       id,

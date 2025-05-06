@@ -46,7 +46,7 @@ export const messageSchema = z.object({
 // GameState model
 export const gameStateSchema = z.object({
   id: z.string(),
-  createdAt: z.string(),
+  createdAt: z.date(),
   currentRound: z.number(),
   currentTrack: songSchema.nullable(),
   hostId: z.string(),

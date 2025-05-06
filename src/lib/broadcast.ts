@@ -13,7 +13,7 @@ export const broadcastGameState = async (roomCode: string, storage: any) => {
   }
 
   const players = await storage.getPlayersInRoom(gameState.room.id);
-  const timestamp = new Date().toISOString();
+  const timestamp = new Date();
 
   const sseMessage = {
     type: 'gameState',

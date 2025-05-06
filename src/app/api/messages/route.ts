@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       userId: user.id,
       content,
       type: messageType,
-      createdAt: new Date().toISOString()
+      createdAt: new Date()
     };
 
     // Store the message in Redis (optional, depending on if you want message history)
