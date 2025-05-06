@@ -166,20 +166,22 @@ export class RedisStorage {
     const resolvedRoomId = await this.resolveRoomId(roomId);
     if (!resolvedRoomId) return [];
   
-    const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
+    const json = await redis.get<GameState>(`gameState:${resolvedRoomId}`);
     if (!json) return [];
   
-    return (JSON.parse(json) as GameState).players;
+    return json.players;
   }
 
   async getSongsForRoom(roomId: string): Promise<Song[]> {
     const resolvedRoomId = await this.resolveRoomId(roomId);
     if (!resolvedRoomId) return [];
   
-    const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
+    const json = await redis.get<GameState>(`gameState:${resolvedRoomId}`);
     if (!json) return [];
+
+    console.log('json', json); // Log the raw JSON string to the consol
   
-    return (JSON.parse(json) as GameState).songs;
+    return json.songs;
   }
 
   async getMessagesForRoom(roomId: string): Promise<Message[]> {
@@ -233,6 +235,39 @@ export class RedisStorage {
     await redis.set(key, JSON.stringify(gameState)); // Ensure game state is stringified
     return newMessage;
   }
+
+  // async saveMessage(message: any) {
+  //   const key = message:${message.id};
+  //   await redis.set(key, JSON.stringify(message));
+
+  //   // Add to room's message list
+  //   const roomMessagesKey = room:${message.roomId}:messages;
+  //   await redis.zadd(roomMessagesKey, Date.now(), message.id);
+
+  //   // Expire after 24 hours
+  //   await redis.expire(key, 60 * 60 * 24);
+  //   await redis.expire(roomMessagesKey, 60 * 60 * 24);
+
+  //   return message;
+  // }
+
+  // async getMessagesForRoom(roomId: string): Promise<Message[]> {
+  //   const room = await this.getRoom(roomId);
+  //   if (!room) return [];
+
+  //   const messageIds = await redis.zrange(room:${roomId}:messages, 0, -1);
+  //   const messages = await Promise.all(
+  //     messageIds.map(id => redis.hgetall(message:${id}))
+  //   );
+  //   return messages.filter(Boolean) as Message[];
+  //   const resolvedRoomId = await this.resolveRoomId(roomId);
+  //   if (!resolvedRoomId) return [];
+
+  //   const json = await redis.get<string>(gameState:${resolvedRoomId});
+  //   if (!json) return [];
+
+  //   return (JSON.parse(json) as GameState).messages;
+  // }
 
   // TODO: Need to update client
   async removePlayerFromRoom(roomId: string, userId: string): Promise<void> {

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const message = url.searchParams.get('message');
   const userId = user?.id;
   
-  console.log(`GET /api/events - User ID: ${userId}, Client count before: ${clients.size}, Clients: ${Array.from(clients.keys())}`);
+  // console.log(`GET /api/events - User ID: ${userId}, Client count before: ${clients.size}, Clients: ${Array.from(clients.keys())}`);
   // const userId = url.searchParams.get('userId'); 
 
   let parsedMessage: any = null;
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
         // Add this client to our map
         clients.set(userId, controller);
-        console.log(`Client added - User ID: ${userId}, Total clients: ${clients.size}, All clients: ${Array.from(clients.keys())}`);
+        // console.log(`Client added - User ID: ${userId}, Total clients: ${clients.size}, All clients: ${Array.from(clients.keys())}`);
 
         // const pingIntervalId = setInterval(() => {
         //   try {

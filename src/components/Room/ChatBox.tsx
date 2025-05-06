@@ -3,28 +3,28 @@ import { Message, Player } from '@shared/schema';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-	Send,
-	// User2
-} from 'lucide-react';
-// import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Send } from 'lucide-react';
+import { sendMessage } from '@/lib/sendMessage';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatBoxProps {
 	messages: Message[];
 	users: Player[];
-	onSendMessage: (content: string) => void;
+	roomCode: string; // Add roomCode prop
 	isGuessing?: boolean;
 }
 
 export function ChatBox({
 	messages,
-	onSendMessage,
+	// users,
+	roomCode,
 	isGuessing = false,
 }: ChatBoxProps) {
 	const [message, setMessage] = useState('');
+	const [isSending, setIsSending] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
-	// const [privateHint, setPrivateHint] = useState<string | null>(null);
+	const { toast } = useToast();
 
 	const scrollToBottom = () => {
 		if (scrollAreaRef.current) {
@@ -42,15 +42,28 @@ export function ChatBox({
 		scrollToBottom();
 	}, [messages]);
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (message.trim()) {
-			onSendMessage(message.trim());
-			setMessage('');
+			try {
+				setIsSending(true);
+				await sendMessage({
+					roomCode,
+					content: message.trim(),
+					type: isGuessing ? 'guess' : 'chat'
+				});
+				setMessage('');
+			} catch (error) {
+				toast({
+					title: 'Failed to send message',
+					description: error instanceof Error ? error.message : 'Unknown error',
+					variant: 'destructive',
+				});
+			} finally {
+				setIsSending(false);
+			}
 		}
 	};
-
-	// TODO: Fix messages to hook up SSE
 
 	return (
 		<div className='bg-gray-800 rounded-lg p-4 flex flex-col h-[500px]'>
@@ -106,8 +119,9 @@ export function ChatBox({
 					placeholder={isGuessing ? 'Type your guess...' : 'Type a message...'}
 					className='flex-1'
 					autoComplete='off'
+					disabled={isSending}
 				/>
-				<Button type='submit' disabled={!message.trim()}>
+				<Button type='submit' disabled={!message.trim() || isSending}>
 					<Send className='h-4 w-4' />
 				</Button>
 			</form>

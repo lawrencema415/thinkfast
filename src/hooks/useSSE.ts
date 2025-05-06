@@ -75,7 +75,7 @@ export const useSSE = (roomCode?: string) => {
                             setMessages((prev) => [...prev, data.payload.content || '']);
                             break;
                         case 'gameState':
-                                setGameState(data.payload.gameState!);
+                            setGameState(data.payload.gameState!);
                             break;
                     }
                 }
