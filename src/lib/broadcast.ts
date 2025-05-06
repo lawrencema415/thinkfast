@@ -1,29 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/broadcast.ts
 import { clients, sseEncoder as encoder } from './sse-clients';
+import type { GameState } from '@/shared/schema';
 
 // TODO: Fix any typings of this page after schema is more defined
 export const broadcastGameState = async (roomCode: string, storage: any) => {
-  const room = await storage.getRoomByCode(roomCode);
-  if (!room) {
+  const gameState = await storage.getGameStateByRoomCode(roomCode) as GameState;
+  if (!gameState) {
     console.error('No room to broadcast', roomCode);
     return;
   }
 
-  const players = await storage.getPlayersInRoom(room.id);
-  const songs = await storage.getSongsForRoom(room.id);
-  const messages = await storage.getMessagesForRoom(room.id);
-
-  const gameState = {
-    room,
-    messages,
-    currentTrack: room.isPlaying ? songs.find((s: any) => !s.isPlayed) : null,
-    currentRound: songs.filter((s: any) => s.isPlayed).length,
-    totalRounds: songs.length,
-    isPlaying: room.isPlaying,
-    timeRemaining: room.timePerSong
-  };
-
+  const players = await storage.getPlayersInRoom(gameState.room.id);
   // TODO: Fix any typings of this page after schema is more defined
   // Log the actual connected clients from the clients Map
   // console.log(`Connected clients (${clients.size}):`, Array.from(clients.keys()));
@@ -31,9 +19,8 @@ export const broadcastGameState = async (roomCode: string, storage: any) => {
 
   for (const player of players) {
     // Check if this player has an active connection
-    if (clients.has(player.userId)) {
-      console.log(`Broadcasting to player ${player.userId} (connection found)`);
-      const controller = clients.get(player.userId);
+    if (clients.has(player.user.id)) {
+      const controller = clients.get(player.user.id);
       if (controller) {
         const sseMessage = {
           type: 'gameState',
@@ -48,11 +35,11 @@ export const broadcastGameState = async (roomCode: string, storage: any) => {
           );
         } catch (e) {
           console.log('Error sending game state to client:', e);
-          clients.delete(player.userId);
+          clients.delete(player.user.id);
         }
       }
     } else {
-      console.log(`Player ${player.userId} has no active connection`);
+      console.log(`Player ${player.user.id} has no active connection`);
     }
   }
 };
