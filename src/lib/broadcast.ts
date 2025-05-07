@@ -20,25 +20,27 @@ export const broadcastGameState = async (roomCode: string, storage: any) => {
     payload: { gameState, timestamp }
   };
 
+  // Encode message once
+  const encodedMessage = encoder.encode(`data: ${JSON.stringify(sseMessage)}\n\n`);
+
   for (const player of players) {
-    const userId = player?.user?.id;
+    const userId = player.user?.id;
     if (!userId) {
       console.warn('[broadcastGameState] Skipping player with invalid user ID:', player);
       continue;
     }
 
     const controller = clients.get(userId);
-
     if (!controller) {
       console.log(`[broadcastGameState] Player ${userId} has no active SSE connection`);
       continue;
     }
 
     try {
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify(sseMessage)}\n\n`));
+      controller.enqueue(encodedMessage);
     } catch (error) {
       console.error(`[broadcastGameState] Failed to send to ${userId}:`, error);
-      clients.delete(userId); // Cleanup dead connection
+      clients.delete(userId); // Clean up dead connection
     }
   }
 };
