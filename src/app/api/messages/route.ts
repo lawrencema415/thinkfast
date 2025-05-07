@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const message = {
       id: crypto.randomUUID(),
       roomId: roomId,
-      user: user, // Include the full user object
+      user: user,
       content,
       type: messageType,
       createdAt: new Date()
