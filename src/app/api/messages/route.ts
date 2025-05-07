@@ -29,20 +29,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    // Create a message object
+    // Get the current game state
+    const gameState = await storage.getGameStateByRoomCode(roomCode);
+    if (!gameState) {
+      return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
+    }
+
+    // Create a message object with the full user object
     const message = {
       id: crypto.randomUUID(),
       roomId: roomId,
-      user: user,
+      user: user, // Include the full user object
       content,
       type: messageType,
       createdAt: new Date()
     };
 
-    // Store the message in Redis (optional, depending on if you want message history)
-    await storage.saveMessage(message);
-
-    // Broadcast the message to all players in the room
+    // Add the message to the game state
+    gameState.messages.push(message);
+    
+    // Save the updated game state and broadcast in one operation
+    await storage.saveGameState(roomId, gameState);
     await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({ success: true, message });
