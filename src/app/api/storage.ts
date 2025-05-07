@@ -208,10 +208,13 @@ export class RedisStorage {
       throw new Error('Failed to parse game state');
     }
   
+    // Check if the leaving user is the host
+    const isHost = gameState.hostId === user.id;
+    
     // Remove the player from the game state
     gameState.players = gameState.players.filter(p => p.user.id !== user.id);
-
-    const displayName = user.user_metadata?.display_name || 'A new player';
+  
+    const displayName = user?.user_metadata?.display_name || 'Unknown Player';
     const message = {
       id: crypto.randomUUID(),
       roomId: roomId,
@@ -221,6 +224,32 @@ export class RedisStorage {
     };
     
     gameState.messages.push(message);
+    
+    // If the host is leaving and there are other players, assign a new host
+    if (isHost && gameState.players.length > 0) {
+      // Find the next player to become the host
+      const nextHost = gameState.players[0];
+      
+      // Update the game state with the new host
+      gameState.hostId = nextHost.user.id;
+      
+      // Update the role of the new host
+      const hostIndex = gameState.players.findIndex(p => p.user.id === nextHost.user.id);
+      if (hostIndex !== -1) {
+        gameState.players[hostIndex].role = ROLE.HOST;
+      }
+      
+      // Add a system message about the new host
+      const newHostMessage = {
+        id: crypto.randomUUID(),
+        roomId: roomId,
+        content: `${nextHost.user.user_metadata?.display_name || 'Unknown Player'} is now the host`,
+        type: 'system',
+        createdAt: new Date()
+      };
+      
+      gameState.messages.push(newHostMessage);
+    }
     
     // Save the updated game state back to Redis
     await redis.set(key, JSON.stringify(gameState));
