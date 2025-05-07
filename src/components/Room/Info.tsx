@@ -39,7 +39,8 @@ export function RoomInfo({
 		}
 	};
 
-	const showSettings = hostId === userId
+	console.log('id', userId, hostId); // Add this line to log the values of userId and hostId to the console
+	console.log(userId === hostId); // Add this line to log the result of the comparison to the console
 
 	return (
 		<div className='bg-dark rounded-lg shadow-lg p-4 mb-6'>
@@ -99,8 +100,6 @@ export function RoomInfo({
 			      currentTimePerSong={timePerSong}
 			      isHost={true}
 			    />
-			  ) : (
-			    <div></div>
 			  )}
 			  <LeaveButton roomCode={code} />
 			</div>
