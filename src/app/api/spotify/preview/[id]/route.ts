@@ -30,8 +30,8 @@ async function getSpotifyLinks(trackId: string) {
   return Array.from(links);
 }
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+export async function GET(request: NextRequest) {
+  const id = request.nextUrl.pathname.split('/').pop();
 
   if (!id) {
     return NextResponse.json({ error: 'Missing track ID' }, { status: 400 });
