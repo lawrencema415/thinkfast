@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     
     // // Save the updated game state
     // await storage.saveGameState(roomId, gameState);
-    await storage.removePlayerFromRoom(roomCode, user);
+    await storage.removePlayerFromRoom(roomCode, user, true);
     await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({ success: true });
