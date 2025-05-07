@@ -188,7 +188,7 @@ export class RedisStorage {
     return player;
   }
   
-  async removePlayerFromRoom(roomCode: string, user: User, skipMessage: boolean = false): Promise<void> {
+  async removePlayerFromRoom(roomCode: string, user: User, method: string): Promise<void> {
     const roomId = await this.getRoomByCode(roomCode);
     if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
     
@@ -208,32 +208,47 @@ export class RedisStorage {
       throw new Error('Failed to parse game state');
     }
   
-    // Check if the player is already in the room
-    // const playerIndex = gameState.players.findIndex(p => p.user.id === user.id);
-    // if (playerIndex === -1) {
-    //   console.log(`Player ${user.id} not found in room ${roomCode}, skipping removal`);
-    //   return;
-    // }
+    //Check if the player is already in the room preventing duplication on SSE disconnection
+    const playerIndex = gameState.players.findIndex(p => p.user.id === user.id);
+    if (playerIndex === -1) {
+      console.log(`Player ${user.id} not found in room ${roomCode}, skipping removal`);
+      return;
+    }
   
     // Check if the leaving user is the host
     const isHost = gameState.hostId === user.id;
     
     // Remove the player from the game state
     gameState.players = gameState.players.filter(p => p.user.id !== user.id);
-  
-    // Only add the leave message if not skipping messages
-    if (!skipMessage) {
-      const displayName = user?.user_metadata?.display_name || 'A player';
-      const message = {
-        id: crypto.randomUUID(),
-        roomId: roomId,
-        content: `${displayName} has left the room`,
-        type: 'system',
-        createdAt: new Date()
-      };
-      
-      gameState.messages.push(message);
+    
+    const displayName = user?.user_metadata?.display_name || 'A player';
+    
+    // Determine message content based on method
+    let content = '';
+    switch (method) {
+      case 'leave':
+        content = `${displayName} has left the room`;
+        break;
+      case 'disconnect':
+        content = `${displayName} has disconnected`;
+        break;
+      case 'kick':
+        content = `${displayName} has been removed from the room`;
+        break;
+      default:
+        content = `${displayName} has left the room`;
+        break;
     }
+   
+    const message = {
+      id: crypto.randomUUID(),
+      roomId: roomId,
+      content: content,
+      type: 'system',
+      createdAt: new Date()
+    };
+      
+    gameState.messages.push(message);
     
     // If the host is leaving and there are other players, assign a new host
     if (isHost && gameState.players.length > 0) {
