@@ -88,6 +88,8 @@ export default function RoomPage() {
 									totalRounds={totalRounds}
 									songsPerPlayer={songsPerPlayer}
 									timePerSong={timePerSong}
+									hostId={hostId}
+									userId={user.id}
 								/>
 								<PlayerList
 									players={players || []}
