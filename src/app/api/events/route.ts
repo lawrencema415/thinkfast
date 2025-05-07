@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
               }
               
               // Remove the player from the room
-              await storage.removePlayerFromRoom(roomCode, userId);
+              await storage.removePlayerFromRoom(roomCode, user);
               
               // Broadcast the updated game state to all remaining players
               await broadcastGameState(roomCode, storage);
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
             console.error(`Error handling disconnection for user ${userId} in room ${roomCode}:`, error);
             disconnectionTimers.delete(userId);
           }
-        }, 5000); // 30 second grace period
+        }, 5000); // 5 second grace period
         
         disconnectionTimers.set(userId, timer);
         console.log(`Set disconnection timer for user ${userId} in room ${roomCode}`);

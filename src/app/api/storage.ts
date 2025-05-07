@@ -170,13 +170,25 @@ export class RedisStorage {
   
     const player: Player = { user, role: ROLE.PLAYER, score: 0 };
     gameState.players.push(player);
+
+    const displayName = user.user_metadata?.display_name || 'A new player';
+
+    const message = {
+      id: crypto.randomUUID(),
+      roomId: roomId,
+      content: `${displayName} has joined the room`,
+      type: 'system',
+      createdAt: new Date()
+    };
+
+    gameState.messages.push(message);
     
     // Save the updated game state back to Redis
     await redis.set(key, JSON.stringify(gameState));
     return player;
   }
   
-  async removePlayerFromRoom(roomCode: string, userId: string): Promise<void> {
+  async removePlayerFromRoom(roomCode: string, user: User, skipMessage: boolean = false): Promise<void> {
     const roomId = await this.getRoomByCode(roomCode);
     if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
     
@@ -196,8 +208,58 @@ export class RedisStorage {
       throw new Error('Failed to parse game state');
     }
   
+    // Check if the player is already in the room
+    // const playerIndex = gameState.players.findIndex(p => p.user.id === user.id);
+    // if (playerIndex === -1) {
+    //   console.log(`Player ${user.id} not found in room ${roomCode}, skipping removal`);
+    //   return;
+    // }
+  
+    // Check if the leaving user is the host
+    const isHost = gameState.hostId === user.id;
+    
     // Remove the player from the game state
-    gameState.players = gameState.players.filter(p => p.user.id !== userId);
+    gameState.players = gameState.players.filter(p => p.user.id !== user.id);
+  
+    // Only add the leave message if not skipping messages
+    if (!skipMessage) {
+      const displayName = user?.user_metadata?.display_name || 'A player';
+      const message = {
+        id: crypto.randomUUID(),
+        roomId: roomId,
+        content: `${displayName} has left the room`,
+        type: 'system',
+        createdAt: new Date()
+      };
+      
+      gameState.messages.push(message);
+    }
+    
+    // If the host is leaving and there are other players, assign a new host
+    if (isHost && gameState.players.length > 0) {
+      // Find the next player to become the host
+      const nextHost = gameState.players[0];
+      
+      // Update the game state with the new host
+      gameState.hostId = nextHost.user.id;
+      
+      // Update the role of the new host
+      const hostIndex = gameState.players.findIndex(p => p.user.id === nextHost.user.id);
+      if (hostIndex !== -1) {
+        gameState.players[hostIndex].role = ROLE.HOST;
+      }
+      
+      // Add a system message about the new host (even if skipping regular leave message)
+      const newHostMessage = {
+        id: crypto.randomUUID(),
+        roomId: roomId,
+        content: `${nextHost.user.user_metadata?.display_name || 'A player'} is now the host`,
+        type: 'system',
+        createdAt: new Date()
+      };
+      
+      gameState.messages.push(newHostMessage);
+    }
     
     // Save the updated game state back to Redis
     await redis.set(key, JSON.stringify(gameState));
@@ -227,7 +289,7 @@ export class RedisStorage {
     return json.songs;
   }
 
-  // async saveMessage(message: Message): Promise<Message>{
+  // async sendSystemMessage(message: Message): Promise<Message>{
   //   // First, add the message to the game state
   //   const roomId = message.roomId;
   //   const key = `gameState:${roomId}`;
@@ -254,15 +316,15 @@ export class RedisStorage {
   // }
 
 
-  async getMessagesForRoom(roomId: string): Promise<Message[]> {
-    const resolvedRoomId = await this.resolveRoomId(roomId);
-    if (!resolvedRoomId) return [];
+  // async getMessagesForRoom(roomId: string): Promise<Message[]> {
+  //   const resolvedRoomId = await this.resolveRoomId(roomId);
+  //   if (!resolvedRoomId) return [];
   
-    const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
-    if (!json) return [];
+  //   const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
+  //   if (!json) return [];
   
-    return (JSON.parse(json) as GameState).messages;
-  }
+  //   return (JSON.parse(json) as GameState).messages;
+  // }
 
   async addSongToRoom(roomId: string, song: Song): Promise<Song> {
     const resolvedRoomId = await this.resolveRoomId(roomId);

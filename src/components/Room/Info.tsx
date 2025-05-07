@@ -11,7 +11,6 @@ interface RoomInfoProps {
 	totalRounds: number;
 	songsPerPlayer: number;
 	timePerSong: number;
-	isHost: boolean;
 	userId: string;
 	hostId: string;
 }
@@ -23,7 +22,6 @@ export function RoomInfo({
 	totalRounds,
 	songsPerPlayer,
 	timePerSong,
-	isHost,
 	userId,
 	hostId,
 }: RoomInfoProps) {
@@ -40,8 +38,6 @@ export function RoomInfo({
 			});
 		}
 	};
-
-	const showSettings = hostId === userId
 
 	return (
 		<div className='bg-dark rounded-lg shadow-lg p-4 mb-6'>
@@ -94,15 +90,13 @@ export function RoomInfo({
 				</div>
 			</div>
 			<div className='mt-5 flex justify-between'>
-			  {userId === hostId ? (
+			  {userId === hostId && (
 			    <SettingsModal 
 			      roomCode={code}
 			      currentSongsPerPlayer={songsPerPlayer}
 			      currentTimePerSong={timePerSong}
 			      isHost={true}
 			    />
-			  ) : (
-			    <div></div>
 			  )}
 			  <LeaveButton roomCode={code} />
 			</div>
