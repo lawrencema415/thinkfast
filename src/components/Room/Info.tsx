@@ -39,6 +39,8 @@ export function RoomInfo({
 		}
 	};
 
+	const showSettings = hostId === userId
+
 	return (
 		<div className='bg-dark rounded-lg shadow-lg p-4 mb-6'>
 			<div className='flex justify-between items-center mb-4'>
@@ -97,6 +99,8 @@ export function RoomInfo({
 			      currentTimePerSong={timePerSong}
 			      isHost={true}
 			    />
+			  ) : (
+			    <div></div>
 			  )}
 			  <LeaveButton roomCode={code} />
 			</div>
