@@ -281,9 +281,6 @@ export class RedisStorage {
   }
 
   async getPlayersInRoom(roomId: string): Promise<Player[]> {
-    // const resolvedRoomId = await this.resolveRoomId(roomId);
-    // if (!resolvedRoomId) return [];
-
     if (!roomId) return [];
   
     const json = await redis.get<GameState>(`gameState:${roomId}`);
@@ -303,43 +300,6 @@ export class RedisStorage {
   
     return json.songs;
   }
-
-  // async sendSystemMessage(message: Message): Promise<Message>{
-  //   // First, add the message to the game state
-  //   const roomId = message.roomId;
-  //   const key = `gameState:${roomId}`;
-  //   const json = await redis.get<string>(key);
-    
-  //   if (!json) throw new Error(`Game state not found for room ${roomId}`);
-    
-  //   let gameState: GameState;
-    
-  //   try {
-  //     gameState = typeof json === 'string' ? JSON.parse(json) : json;
-  //   } catch (error) {
-  //     console.error('Error parsing game state:', error);
-  //     throw new Error('Failed to parse game state');
-  //   }
-    
-  //   // Add the message to the game state's messages array
-  //   gameState.messages.push(message);
-    
-  //   // Save the updated game state back to Redis
-  //   await redis.set(key, JSON.stringify(gameState));
-    
-  //   return message;
-  // }
-
-
-  // async getMessagesForRoom(roomId: string): Promise<Message[]> {
-  //   const resolvedRoomId = await this.resolveRoomId(roomId);
-  //   if (!resolvedRoomId) return [];
-  
-  //   const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
-  //   if (!json) return [];
-  
-  //   return (JSON.parse(json) as GameState).messages;
-  // }
 
   async addSongToRoom(roomId: string, song: Song): Promise<Song> {
     const resolvedRoomId = await this.resolveRoomId(roomId);
@@ -377,26 +337,6 @@ export class RedisStorage {
     await redis.set(key, JSON.stringify(gameState)); // Ensure game state is stringified
     return newMessage;
   }
-
-  
-
-  // async getMessagesForRoom(roomId: string): Promise<Message[]> {
-  //   const room = await this.getRoom(roomId);
-  //   if (!room) return [];
-
-  //   const messageIds = await redis.zrange(room:${roomId}:messages, 0, -1);
-  //   const messages = await Promise.all(
-  //     messageIds.map(id => redis.hgetall(message:${id}))
-  //   );
-  //   return messages.filter(Boolean) as Message[];
-  //   const resolvedRoomId = await this.resolveRoomId(roomId);
-  //   if (!resolvedRoomId) return [];
-
-  //   const json = await redis.get<string>(gameState:${resolvedRoomId});
-  //   if (!json) return [];
-
-  //   return (JSON.parse(json) as GameState).messages;
-  // }
 
 }
 
