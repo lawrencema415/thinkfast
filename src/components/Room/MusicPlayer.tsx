@@ -281,6 +281,8 @@ export function MusicPlayer({
 							src={currentTrack.albumArt}
 							alt='Track artwork'
 							className='w-full h-full rounded-lg object-cover transition-all duration-300'
+							height={32}
+							width={32}
 							style={{
 								filter:
 									timeRemaining > 1

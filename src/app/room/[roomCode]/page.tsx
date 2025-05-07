@@ -23,7 +23,7 @@ export default function RoomPage() {
 	const roomCode = params.roomCode as string;
 	const { toast } = useToast();
 	const { gameState } = useSSE(roomCode);
-	const { loading } = useAuth();
+	const { loading, user } = useAuth();
 
 	useEffect(() => {
 		if (gameState) {
@@ -52,13 +52,26 @@ export default function RoomPage() {
 		fetchGameState();
 	}, [roomCode, toast]);
 
-	if (loading || isEmpty(initialState)) {
+	if (loading || isEmpty(initialState) || !user) {
 		return <LoadingScreen />;
 	}
 
-	console.log('initialState', initialState);
+	const { id } = user;
 
 	// TODO: UPDATE MUSICPLAYER PROPS
+
+	const {
+		currentRound,
+		currentTrack,
+		songs,
+		messages,
+		songsPerPlayer,
+		timePerSong,
+		room,
+		totalRounds,
+		players,
+		hostId,
+	} = initialState;
 
 	return (
 		<div className='min-h-screen flex flex-col'>
@@ -69,24 +82,24 @@ export default function RoomPage() {
 						{initialState && (
 							<>
 								<RoomInfo
-									room={initialState.room}
+									room={room}
 									hostUserName={''}
-									currentRound={initialState.currentRound}
-									totalRounds={initialState.totalRounds}
-									songsPerPlayer={initialState.songsPerPlayer}
-									timePerSong={initialState.timePerSong}
+									currentRound={currentRound}
+									totalRounds={totalRounds}
+									songsPerPlayer={songsPerPlayer}
+									timePerSong={timePerSong}
 								/>
 								<PlayerList
-									players={initialState.players || []}
-									hostId={initialState.hostId}
-									songsPerPlayer={initialState.songsPerPlayer}
+									players={players || []}
+									hostId={hostId}
+									songsPerPlayer={songsPerPlayer}
 								/>
 							</>
 						)}
 					</div>
 					<div className='lg:w-2/4'>
 						<MusicPlayer
-							currentTrack={null}
+							currentTrack={currentTrack}
 							submitter={null}
 							currentRound={0}
 							totalRounds={0}
@@ -97,14 +110,14 @@ export default function RoomPage() {
 							}}
 						/>
 						<ChatBox
-							messages={gameState?.messages || []}
+							messages={messages || []}
 							roomCode={roomCode}
 							users={gameState?.players || []}
 							isGuessing={false}
 						/>
 					</div>
 					<div className='lg:w-1/4'>
-						<SongQueue songQueue={[]} currentTrackIndex={0} submitters={{}} />
+						<SongQueue songQueue={songs} currentTrackIndex={0} userId={id} />
 					</div>
 				</div>
 			</main>

@@ -4,7 +4,7 @@ import { createContext, ReactNode, useContext } from 'react';
 import { useMutation, UseMutationResult } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import type { GameState, Room } from '../shared/schema';
+import type { GameState, Room, Song } from '../shared/schema';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -18,6 +18,11 @@ type GameContextType = {
 	>;
 	joinRoomMutation: UseMutationResult<Room, Error, string>;
 	leaveRoomMutation: UseMutationResult<void, Error, string>;
+	addSongMutation: UseMutationResult<
+		Song,
+		Error,
+		{ roomCode: string; song: Song }
+	>;
 };
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -109,18 +114,44 @@ export function GameProvider({ children }: { children: ReactNode }) {
 		},
 	});
 
+	const addSongMutation = useMutation<
+		Song,
+		Error,
+		{ roomCode: string; song: Song }
+	>({
+		mutationFn: async ({ roomCode, song }) => {
+			const res = await apiRequest('POST', '/api/songs', {
+				roomCode,
+				song,
+			});
+
+			if (!res.ok) {
+				const error = await res.json();
+				throw new Error(error.message || 'Failed to add song');
+			}
+
+			return song;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
+		},
+	});
+
 	const value: GameContextType = {
 		isLoading:
 			createRoomMutation.status === 'pending' ||
 			joinRoomMutation.status === 'pending' ||
-			leaveRoomMutation.status === 'pending',
+			leaveRoomMutation.status === 'pending' ||
+			addSongMutation.status === 'pending',
 		error:
 			createRoomMutation.error ||
 			joinRoomMutation.error ||
-			leaveRoomMutation.error,
+			leaveRoomMutation.error ||
+			addSongMutation.error,
 		createRoomMutation,
 		joinRoomMutation,
 		leaveRoomMutation,
+		addSongMutation,
 	};
 
 	return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

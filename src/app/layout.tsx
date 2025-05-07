@@ -10,7 +10,7 @@ export default function RootLayout({
 		<html lang='en' className='dark'>
 			<body className='min-h-screen bg-background text-foreground'>
 				<Providers>
-					<div className='min-h-screen flex flex-col'>
+					<div className='min-h-screen flex flex-col' id='modal-root'>
 						<main>{children}</main>
 					</div>
 				</Providers>

@@ -24,12 +24,12 @@ export const roomSchema = z.object({
 // Song model
 export const songSchema = z.object({
   id: z.string(),
-  title: z.string(),
   albumArt: z.string(),
-  sourceType: z.string(),
-  previewUrl: z.string(),
-  isPlayed: z.boolean().default(false),
   artist: z.string(),
+  previewUrl: z.string(),
+  sourceType: z.string(),
+  sourceId: z.string(),
+  title: z.string(),
   userId: z.string(),
 });
 

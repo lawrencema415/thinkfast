@@ -3,19 +3,18 @@ import { Song } from '@shared/schema';
 import { MusicWave } from '@/components/ui/music-wave';
 import { useToast } from '@/hooks/use-toast';
 import ReactPlayer from 'react-player';
+import { AddSong } from './AddSong';
 
 interface SongQueueProps {
 	songQueue: Song[];
 	currentTrackIndex: number;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	submitters: any;
+	userId: string;
 }
 
-// FIXME: Update according to schema
 export function SongQueue({
 	songQueue,
 	currentTrackIndex,
-	submitters,
+	userId,
 }: SongQueueProps) {
 	const { toast } = useToast();
 	const [previewingSongId, setPreviewingSongId] = useState<string | null>(null);
@@ -23,28 +22,22 @@ export function SongQueue({
 	const playerRef = useRef<ReactPlayer>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 
-	// useEffect(() => {
-	//   console.log('Current Song Queue:', songQueue);
-	// }, [songQueue]);
-
 	return (
 		<div className='bg-dark rounded-lg shadow-lg overflow-hidden mb-6'>
-			<div className='p-4 bg-gray-800 border-b border-gray-700'>
+			<div className='flex justify-between p-4 bg-gray-800 border-b border-gray-700'>
 				<h2 className='font-heading text-lg font-semibold'>Song Queue</h2>
+				<AddSong roomCode={''} songQueue={[]} userId={userId} />
 			</div>
 
 			<div className='p-4 space-y-3'>
 				{songQueue.map((song, index) => {
-					const isPrevious = index < currentTrackIndex;
 					const isCurrent = index === currentTrackIndex;
-					const isNext = index === currentTrackIndex + 1;
 
 					const displayNumber = index + 1;
-					const submitter = submitters[song.userId];
 
 					return (
 						<div
-							key={song.id}
+							key={index}
 							className={`flex items-center p-3 rounded-lg transition-colors ${
 								isCurrent
 									? 'bg-primary bg-opacity-10 border border-primary/30 relative'
@@ -64,20 +57,6 @@ export function SongQueue({
 								>
 									{displayNumber}
 								</span>
-							</div>
-							<div className='flex-1'>
-								<p className='font-medium text-sm'>
-									{isPrevious
-										? 'Previous track'
-										: isCurrent
-										? 'Current track'
-										: isNext
-										? 'Next track'
-										: 'Upcoming track'}
-								</p>
-								<p className='text-xs text-gray-400'>
-									{submitter?.user_metadata.display_name}
-								</p>
 							</div>
 							<div className='flex items-center space-x-2'>
 								{
@@ -127,7 +106,7 @@ export function SongQueue({
 			{/* Hidden player for YouTube previews */}
 			{previewingSongId &&
 				isPlaying &&
-				songQueue.find((s) => s.id === previewingSongId)?.sourceType ===
+				songQueue.find((s) => s.userId === previewingSongId)?.sourceType ===
 					'youtube' && (
 					<div style={{ display: 'none' }}>
 						<ReactPlayer

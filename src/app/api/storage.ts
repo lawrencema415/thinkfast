@@ -264,7 +264,7 @@ export class RedisStorage {
     return (JSON.parse(json) as GameState).messages;
   }
 
-  async addSongToRoom(roomId: string, song: Omit<Song, 'id' | 'isPlayed'>): Promise<Song> {
+  async addSongToRoom(roomId: string, song: Song): Promise<Song> {
     const resolvedRoomId = await this.resolveRoomId(roomId);
     if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
   
@@ -274,15 +274,10 @@ export class RedisStorage {
   
     const gameState = JSON.parse(json) as GameState;
   
-    const newSong: Song = {
-      ...song,
-      id: this.generateId(),
-      isPlayed: false,
-    };
   
-    gameState.songs.push(newSong);
+    gameState.songs.push(song);
     await redis.set(key, JSON.stringify(gameState)); // Ensure game state is stringified
-    return newSong;
+    return song;
   }
 
   async addMessageToRoom(roomId: string, message: Omit<Message, 'id' | 'timestamp'>): Promise<Message> {
