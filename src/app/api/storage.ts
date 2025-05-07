@@ -170,13 +170,25 @@ export class RedisStorage {
   
     const player: Player = { user, role: ROLE.PLAYER, score: 0 };
     gameState.players.push(player);
+
+    const displayName = user.user_metadata?.display_name || 'A new player';
+
+    const message = {
+      id: crypto.randomUUID(),
+      roomId: roomId,
+      content: `${displayName} has joined the room`,
+      type: 'system',
+      createdAt: new Date()
+    };
+
+    gameState.messages.push(message);
     
     // Save the updated game state back to Redis
     await redis.set(key, JSON.stringify(gameState));
     return player;
   }
   
-  async removePlayerFromRoom(roomCode: string, userId: string): Promise<void> {
+  async removePlayerFromRoom(roomCode: string, user: User): Promise<void> {
     const roomId = await this.getRoomByCode(roomCode);
     if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
     
@@ -197,7 +209,18 @@ export class RedisStorage {
     }
   
     // Remove the player from the game state
-    gameState.players = gameState.players.filter(p => p.user.id !== userId);
+    gameState.players = gameState.players.filter(p => p.user.id !== user.id);
+
+    const displayName = user.user_metadata?.display_name || 'A new player';
+    const message = {
+      id: crypto.randomUUID(),
+      roomId: roomId,
+      content: `${displayName} has left the room`,
+      type: 'system',
+      createdAt: new Date()
+    };
+    
+    gameState.messages.push(message);
     
     // Save the updated game state back to Redis
     await redis.set(key, JSON.stringify(gameState));
@@ -227,7 +250,7 @@ export class RedisStorage {
     return json.songs;
   }
 
-  // async saveMessage(message: Message): Promise<Message>{
+  // async sendSystemMessage(message: Message): Promise<Message>{
   //   // First, add the message to the game state
   //   const roomId = message.roomId;
   //   const key = `gameState:${roomId}`;
@@ -254,15 +277,15 @@ export class RedisStorage {
   // }
 
 
-  async getMessagesForRoom(roomId: string): Promise<Message[]> {
-    const resolvedRoomId = await this.resolveRoomId(roomId);
-    if (!resolvedRoomId) return [];
+  // async getMessagesForRoom(roomId: string): Promise<Message[]> {
+  //   const resolvedRoomId = await this.resolveRoomId(roomId);
+  //   if (!resolvedRoomId) return [];
   
-    const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
-    if (!json) return [];
+  //   const json = await redis.get<string>(`gameState:${resolvedRoomId}`);
+  //   if (!json) return [];
   
-    return (JSON.parse(json) as GameState).messages;
-  }
+  //   return (JSON.parse(json) as GameState).messages;
+  // }
 
   async addSongToRoom(roomId: string, song: Song): Promise<Song> {
     const resolvedRoomId = await this.resolveRoomId(roomId);

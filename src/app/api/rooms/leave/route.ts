@@ -26,20 +26,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not in room' }, { status: 400 });
     }
 
-    const displayName = user.user_metadata?.display_name || 'A new player';
-    const message = {
-      id: crypto.randomUUID(),
-      roomId: roomId,
-      content: `${displayName} has left the room`,
-      type: 'system',
-      createdAt: new Date()
-    };
+    // const displayName = user.user_metadata?.display_name || 'A new player';
+    // const message = {
+    //   id: crypto.randomUUID(),
+    //   roomId: roomId,
+    //   content: `${displayName} has left the room`,
+    //   type: 'system',
+    //   createdAt: new Date()
+    // };
     
-    gameState.messages.push(message);
+    // gameState.messages.push(message);
     
-    // Save the updated game state
-    await storage.saveGameState(roomId, gameState);
-    await storage.removePlayerFromRoom(roomCode, user.id);
+    // // Save the updated game state
+    // await storage.saveGameState(roomId, gameState);
+    await storage.removePlayerFromRoom(roomCode, user);
     await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({ success: true });

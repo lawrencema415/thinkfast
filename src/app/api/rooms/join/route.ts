@@ -27,19 +27,19 @@ export async function POST(req: Request) {
     }
     
     // Add a system message announcing the new player
-    const displayName = user.user_metadata?.display_name || 'A new player';
-    const message = {
-      id: crypto.randomUUID(),
-      roomId: roomId,
-      content: `${displayName} has joined the room`,
-      type: 'system',
-      createdAt: new Date()
-    };
+    // const displayName = user.user_metadata?.display_name || 'A new player';
+    // const message = {
+    //   id: crypto.randomUUID(),
+    //   roomId: roomId,
+    //   content: `${displayName} has joined the room`,
+    //   type: 'system',
+    //   createdAt: new Date()
+    // };
     
-    gameState.messages.push(message);
+    // gameState.messages.push(message);
     
-    // Save the updated game state
-    await storage.saveGameState(roomId, gameState);
+    // // Save the updated game state
+    // await storage.saveGameState(roomId, gameState);
     await storage.addPlayerToRoom(roomCode, user);
     await broadcastGameState(roomCode, storage);
 
