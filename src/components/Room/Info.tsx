@@ -41,6 +41,8 @@ export function RoomInfo({
 		}
 	};
 
+	const showSettings = hostId === userId
+
 	return (
 		<div className='bg-dark rounded-lg shadow-lg p-4 mb-6'>
 			<div className='flex justify-between items-center mb-4'>
@@ -91,14 +93,16 @@ export function RoomInfo({
 					</span>
 				</div>
 			</div>
-			<div className={`mt-5 ${(isHost || userId === hostId) ? 'flex justify-between' : 'flex justify-end'}`}>
-			  {(isHost || userId === hostId) && (
+			<div className='mt-5 flex justify-between'>
+			  {userId === hostId ? (
 			    <SettingsModal 
 			      roomCode={code}
 			      currentSongsPerPlayer={songsPerPlayer}
 			      currentTimePerSong={timePerSong}
 			      isHost={true}
 			    />
+			  ) : (
+			    <div></div>
 			  )}
 			  <LeaveButton roomCode={code} />
 			</div>
