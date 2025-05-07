@@ -3,10 +3,10 @@ import { Message, Player } from '@shared/schema';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send } from 'lucide-react';
+import { Send, User2 } from 'lucide-react';
 import { sendMessage } from '@/lib/sendMessage';
 import { useToast } from '@/hooks/use-toast';
-// import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface ChatBoxProps {
 	messages: Message[];
@@ -69,6 +69,69 @@ export function ChatBox({
 		}
 	};
 
+	// Enhanced function to find user by userId with fallback
+	const findUserByUserId = (userId: string) => {
+		// First try to find the player in the current users array
+		const player = users.find(player => player.user?.id === userId);
+		
+		// If we found the player, return it
+		if (player) return player;
+		
+		// No player found in current users array
+		return null;
+	};
+
+	// Function to get display name with fallback
+	const getDisplayName = (userId: string) => {
+	  const player = findUserByUserId(userId);
+	  
+	  if (player?.user?.user_metadata?.display_name) {
+	    return player.user.user_metadata.display_name;
+	  }
+	  
+	  // Try to find the user's name in session storage
+	  const storedNames = sessionStorage.getItem('userDisplayNames');
+	  if (storedNames) {
+	    try {
+	      const namesMap = JSON.parse(storedNames);
+	      if (namesMap[userId]) {
+	        return namesMap[userId];
+	      }
+	    } catch (e) {
+	      console.error('Error parsing stored display names:', e);
+	    }
+	  }
+	  
+	  return 'Unknown User';
+	};
+
+	// Store display names when they become available
+	useEffect(() => {
+	  const storedNames = sessionStorage.getItem('userDisplayNames') || '{}';
+	  let namesMap;
+	  
+	  try {
+	    namesMap = JSON.parse(storedNames);
+	  } catch (e) {
+	    namesMap = {};
+	  }
+	  
+	  let updated = false;
+	  
+	  users.forEach(player => {
+	    if (player.user?.id && player.user?.user_metadata?.display_name) {
+	      if (!namesMap[player.user.id] || namesMap[player.user.id] !== player.user.user_metadata.display_name) {
+	        namesMap[player.user.id] = player.user.user_metadata.display_name;
+	        updated = true;
+	      }
+	    }
+	  });
+	  
+	  if (updated) {
+	    sessionStorage.setItem('userDisplayNames', JSON.stringify(namesMap));
+	  }
+	}, [users]);
+
 	return (
 		<div className='bg-gray-800 rounded-lg p-4 flex flex-col h-[500px]'>
 			<div className='mb-4'>
@@ -79,12 +142,12 @@ export function ChatBox({
 
 			<ScrollArea className='flex-1 mb-4' ref={scrollAreaRef}>
 				<div className='space-y-4'>
-					{/* {messages.map((msg, i) => {
-						const user = users[msg.userId];
-						const user = 'temp-user';
+					{messages.map((msg, i) => {
+						const player = findUserByUserId(msg.userId);
 						const isSystem = msg.type === 'system';
 						const isGuess = msg.type === 'guess';
-
+						const displayName = getDisplayName(msg.userId);
+						
 						return (
 							<div
 								key={i}
@@ -95,23 +158,25 @@ export function ChatBox({
 								{!isSystem && (
 									<Avatar className='h-8 w-8'>
 										<AvatarImage
-											src={user?.avatarUrl || ''}
-											alt={user?.username}
+											src={player?.user?.user_metadata?.avatarUrl || ''}
+											alt={displayName}
 										/>
 										<AvatarFallback>
-											<User2 className='w-8 h-8' />
+											<User2 className='w-4 h-4' />
 										</AvatarFallback>
 									</Avatar>
 								)}
 								<div className='flex-1 break-words'>
-									{!isSystem && user && (
-										<span className='font-medium mr-2'>{user.username}:</span>
+									{!isSystem && (
+										<span className='font-medium mr-2'>
+											{displayName}:
+										</span>
 									)}
 									<span>{msg.content}</span>
 								</div>
 							</div>
 						);
-					})} */}
+					})}
 					<div ref={messagesEndRef} />
 				</div>
 			</ScrollArea>
