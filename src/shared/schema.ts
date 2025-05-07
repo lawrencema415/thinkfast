@@ -37,7 +37,7 @@ export const songSchema = z.object({
 export const messageSchema = z.object({
   id: z.string(),
   roomId: z.string(),
-  userId: z.string(),
+  user: z.custom<SupabaseUser>(),
   content: z.string(),
   type: z.string().default("chat"),
   createdAt: z.date()

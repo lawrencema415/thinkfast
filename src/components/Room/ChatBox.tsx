@@ -37,10 +37,7 @@ export function ChatBox({
 			}
 		}
 	};
-
-	console.log('chat box user', users);
-	console.log('chat box rendered', messages);
-
+	
 	// Scroll to bottom when new messages arrive
 	useEffect(() => {
 		scrollToBottom();
@@ -81,57 +78,6 @@ export function ChatBox({
 		return null;
 	};
 
-	// Function to get display name with fallback
-	const getDisplayName = (userId: string) => {
-	  const player = findUserByUserId(userId);
-	  
-	  if (player?.user?.user_metadata?.display_name) {
-	    return player.user.user_metadata.display_name;
-	  }
-	  
-	  // Try to find the user's name in session storage
-	  const storedNames = sessionStorage.getItem('userDisplayNames');
-	  if (storedNames) {
-	    try {
-	      const namesMap = JSON.parse(storedNames);
-	      if (namesMap[userId]) {
-	        return namesMap[userId];
-	      }
-	    } catch (e) {
-	      console.error('Error parsing stored display names:', e);
-	    }
-	  }
-	  
-	  return 'Unknown User';
-	};
-
-	// Store display names when they become available
-	useEffect(() => {
-	  const storedNames = sessionStorage.getItem('userDisplayNames') || '{}';
-	  let namesMap;
-	  
-	  try {
-	    namesMap = JSON.parse(storedNames);
-	  } catch (e) {
-	    namesMap = {};
-	  }
-	  
-	  let updated = false;
-	  
-	  users.forEach(player => {
-	    if (player.user?.id && player.user?.user_metadata?.display_name) {
-	      if (!namesMap[player.user.id] || namesMap[player.user.id] !== player.user.user_metadata.display_name) {
-	        namesMap[player.user.id] = player.user.user_metadata.display_name;
-	        updated = true;
-	      }
-	    }
-	  });
-	  
-	  if (updated) {
-	    sessionStorage.setItem('userDisplayNames', JSON.stringify(namesMap));
-	  }
-	}, [users]);
-
 	return (
 		<div className='bg-gray-800 rounded-lg p-4 flex flex-col h-[500px]'>
 			<div className='mb-4'>
@@ -143,10 +89,10 @@ export function ChatBox({
 			<ScrollArea className='flex-1 mb-4' ref={scrollAreaRef}>
 				<div className='space-y-4'>
 					{messages.map((msg, i) => {
-						const player = findUserByUserId(msg.userId);
+						const player = findUserByUserId(msg.user.id);
 						const isSystem = msg.type === 'system';
 						const isGuess = msg.type === 'guess';
-						const displayName = getDisplayName(msg.userId);
+						const displayName = msg.user?.user_metadata?.display_name || 'Unknown User';
 						
 						return (
 							<div

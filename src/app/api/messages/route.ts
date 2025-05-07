@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const message = {
       id: crypto.randomUUID(),
       roomId: roomId,
-      userId: user.id,
+      user: user,
       content,
       type: messageType,
       createdAt: new Date()
