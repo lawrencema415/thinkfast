@@ -9,12 +9,14 @@ interface SongQueueProps {
 	songQueue: Song[];
 	currentTrackIndex: number;
 	userId: string;
+	roomCode: string;
 }
 
 export function SongQueue({
 	songQueue,
 	currentTrackIndex,
 	userId,
+	roomCode,
 }: SongQueueProps) {
 	const { toast } = useToast();
 	const [previewingSongId, setPreviewingSongId] = useState<string | null>(null);
@@ -26,7 +28,7 @@ export function SongQueue({
 		<div className='bg-dark rounded-lg shadow-lg overflow-hidden mb-6'>
 			<div className='flex justify-between p-4 bg-gray-800 border-b border-gray-700'>
 				<h2 className='font-heading text-lg font-semibold'>Song Queue</h2>
-				<AddSong roomCode={''} songQueue={[]} userId={userId} />
+				<AddSong roomCode={roomCode} songQueue={[]} userId={userId} />
 			</div>
 
 			<div className='p-4 space-y-3'>

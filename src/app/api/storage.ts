@@ -309,7 +309,14 @@ export class RedisStorage {
     const json = await redis.get<string>(key);
     if (!json) throw new Error(`Game state not found for room ${roomId}`);
   
-    const gameState = JSON.parse(json) as GameState;
+    let gameState: GameState;
+    
+    try {
+      gameState = typeof json === 'string' ? JSON.parse(json) : json;
+    } catch (error) {
+      console.error('Error parsing game state:', error);
+      throw new Error('Failed to parse game state');
+    }
   
     gameState.songs.push(song);
     await redis.set(key, JSON.stringify(gameState)); // Ensure game state is stringified

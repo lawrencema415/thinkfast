@@ -49,6 +49,8 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+	console.log('search', roomCode)
+
 	// Clear state when modal opens/closes
 	useEffect(() => {
 		if (!isOpen) {
@@ -235,6 +237,8 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 			(track) => track.id === spotifyTrack.id
 		);
 		previewUrl = previewResult?.preview_url || '';
+
+		console.log('adding song to roomCode', roomCode)
 
 		addSongMutation.mutate({
 			roomCode,

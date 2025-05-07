@@ -159,7 +159,12 @@ export default function RoomPage() {
 						/>
 					</div>
 					<div className='lg:w-1/4'>
-						<SongQueue songQueue={songs} currentTrackIndex={0} userId={id} />
+						<SongQueue 
+							songQueue={songs} 
+							currentTrackIndex={0} 
+							userId={id} 
+							roomCode={roomCode}
+						/>
 					</div>
 				</div>
 			</main>
