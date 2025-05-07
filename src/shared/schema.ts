@@ -37,7 +37,7 @@ export const songSchema = z.object({
 export const messageSchema = z.object({
   id: z.string(),
   roomId: z.string(),
-  user: z.custom<SupabaseUser>(),
+  user: z.custom<SupabaseUser>().optional(),
   content: z.string(),
   type: z.string().default("chat"),
   createdAt: z.date()
@@ -61,6 +61,13 @@ export const gameStateSchema = z.object({
   timeRemaining: z.number(),
   totalRounds: z.number(),
 });
+
+export const updateGameSchema = z.object({
+  roomCode: z.string(),
+  songsPerPlayer: z.number().int().positive().optional(),
+  timePerSong: z.number().int().positive().optional()
+});
+
 // Define types
 export type Player = z.infer<typeof playerSchema>;
 export type Room = z.infer<typeof roomSchema>;

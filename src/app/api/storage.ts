@@ -227,31 +227,31 @@ export class RedisStorage {
     return json.songs;
   }
 
-  async saveMessage(message: Message): Promise<Message>{
-    // First, add the message to the game state
-    const roomId = message.roomId;
-    const key = `gameState:${roomId}`;
-    const json = await redis.get<string>(key);
+  // async saveMessage(message: Message): Promise<Message>{
+  //   // First, add the message to the game state
+  //   const roomId = message.roomId;
+  //   const key = `gameState:${roomId}`;
+  //   const json = await redis.get<string>(key);
     
-    if (!json) throw new Error(`Game state not found for room ${roomId}`);
+  //   if (!json) throw new Error(`Game state not found for room ${roomId}`);
     
-    let gameState: GameState;
+  //   let gameState: GameState;
     
-    try {
-      gameState = typeof json === 'string' ? JSON.parse(json) : json;
-    } catch (error) {
-      console.error('Error parsing game state:', error);
-      throw new Error('Failed to parse game state');
-    }
+  //   try {
+  //     gameState = typeof json === 'string' ? JSON.parse(json) : json;
+  //   } catch (error) {
+  //     console.error('Error parsing game state:', error);
+  //     throw new Error('Failed to parse game state');
+  //   }
     
-    // Add the message to the game state's messages array
-    gameState.messages.push(message);
+  //   // Add the message to the game state's messages array
+  //   gameState.messages.push(message);
     
-    // Save the updated game state back to Redis
-    await redis.set(key, JSON.stringify(gameState));
+  //   // Save the updated game state back to Redis
+  //   await redis.set(key, JSON.stringify(gameState));
     
-    return message;
-  }
+  //   return message;
+  // }
 
 
   async getMessagesForRoom(roomId: string): Promise<Message[]> {
