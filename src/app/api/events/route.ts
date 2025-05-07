@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
             console.error(`Error handling disconnection for user ${userId} in room ${roomCode}:`, error);
             disconnectionTimers.delete(userId);
           }
-        }, 3000); // 3 second grace period
+        }, 5000); // 5 second grace period
         
         disconnectionTimers.set(userId, timer);
         console.log(`Set disconnection timer for user ${userId} in room ${roomCode}`);

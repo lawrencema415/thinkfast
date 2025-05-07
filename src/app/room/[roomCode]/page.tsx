@@ -95,6 +95,7 @@ export default function RoomPage() {
 									players={players || []}
 									hostId={hostId}
 									songsPerPlayer={songsPerPlayer}
+									userId={user.id}
 								/>
 							</>
 						)}

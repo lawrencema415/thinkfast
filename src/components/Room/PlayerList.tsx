@@ -5,11 +5,13 @@ interface PlayerListProps {
 	players: Player[];
 	hostId: string;
 	songsPerPlayer: number;
+	userId: string;
 }
 
 export function PlayerList({
 	players,
 	hostId,
+	userId,
 }: // songsPerPlayer,
 PlayerListProps) {
 	// Sort players by score (highest first)
@@ -31,7 +33,7 @@ PlayerListProps) {
 								<AvatarFallback>User</AvatarFallback>
 							</Avatar>
 							<div>
-								<p className='font-medium'>
+								<p className={`font-medium ${user?.id === userId ? 'text-yellow-400' : ''}`}>
 									{user?.user_metadata?.display_name}
 									{user?.id === hostId && (
 										<span className='text-xs text-primary ml-1'>(Host)</span>
