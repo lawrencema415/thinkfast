@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send } from 'lucide-react';
 import { sendMessage } from '@/lib/sendMessage';
 import { useToast } from '@/hooks/use-toast';
+// import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface ChatBoxProps {
 	messages: Message[];
@@ -16,8 +17,8 @@ interface ChatBoxProps {
 
 export function ChatBox({
 	messages,
-	// users,
 	roomCode,
+	users,
 	isGuessing = false,
 }: ChatBoxProps) {
 	const [message, setMessage] = useState('');
@@ -36,6 +37,9 @@ export function ChatBox({
 			}
 		}
 	};
+
+	console.log('chat box user', users);
+	console.log('chat box rendered', messages);
 
 	// Scroll to bottom when new messages arrive
 	useEffect(() => {

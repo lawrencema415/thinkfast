@@ -99,8 +99,8 @@ export default function RoomPage() {
 						<ChatBox
 							messages={gameState?.messages || []}
 							roomCode={roomCode}
-							users={initialState.players || []}
-							// onSendMessage={() => {}}
+							users={gameState?.players || []}
+							isGuessing={false}
 						/>
 					</div>
 					<div className='lg:w-1/4'>

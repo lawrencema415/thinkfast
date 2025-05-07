@@ -7,6 +7,10 @@ import { broadcastGameState } from '@/lib/broadcast';
 
 // Use the global clients map
 const messages: string[] = [];
+// Add a map to track disconnection timers
+// Make sure the disconnectionTimers map is properly scoped
+// Move it outside the function to ensure it's shared across requests
+const disconnectionTimers = new Map<string, NodeJS.Timeout>();
 
 export async function GET(request: NextRequest) {
   const { user } = await verifyAuthInRouteHandler();
@@ -71,6 +75,17 @@ export async function GET(request: NextRequest) {
 
         // Add this client to our map
         clients.set(userId, controller);
+        
+        // Add more logging to debug the issue
+        console.log(`Client connected - User ID: ${userId}, Has timer: ${disconnectionTimers.has(userId)}`);
+        
+        // Clear any pending disconnection timer for this user
+        if (disconnectionTimers.has(userId)) {
+          clearTimeout(disconnectionTimers.get(userId));
+          disconnectionTimers.delete(userId);
+          console.log(`User ${userId} reconnected within grace period, cleared disconnection timer`);
+        }
+        
         // console.log(`Client added - User ID: ${userId}, Total clients: ${clients.size}, All clients: ${Array.from(clients.keys())}`);
 
         // const pingIntervalId = setInterval(() => {
@@ -96,27 +111,55 @@ export async function GET(request: NextRequest) {
       }
       clients.delete(userId);
       
-      // Get the roomId from the URL parameters
       const roomCode = url.searchParams.get('roomCode');
       
       if (roomCode && userId) {
-        // Use an async IIFE to handle the async operations
-        (async () => {
+        // Add more logging to debug the issue
+        console.log(`Client disconnected - User ID: ${userId}, Has existing timer: ${disconnectionTimers.has(userId)}`);
+        
+        // Clear any existing timer for this user
+        if (disconnectionTimers.has(userId)) {
+          clearTimeout(disconnectionTimers.get(userId));
+          disconnectionTimers.delete(userId);
+          console.log(`Cleared existing timer for user ${userId} before setting a new one`);
+        }
+        
+        // Set a new timer to remove the player after a delay
+        const timer = setTimeout(async () => {
           try {
+            // Double-check if the user has reconnected before proceeding
+            if (clients.has(userId)) {
+              console.log(`Timer fired but user ${userId} has reconnected, not removing from room ${roomCode}`);
+              disconnectionTimers.delete(userId);
+              return;
+            }
             const roomId = await storage.getRoomByCode(roomCode);
 
             if (roomId) {
+              // Check if the user has reconnected
+              if (clients.has(userId)) {
+                console.log(`User ${userId} reconnected, not removing from room ${roomCode}`);
+                return;
+              }
+              
               // Remove the player from the room
               await storage.removePlayerFromRoom(roomCode, userId);
               
               // Broadcast the updated game state to all remaining players
               await broadcastGameState(roomCode, storage);
-              console.log(`Player ${userId} removed from room ${roomCode} due to disconnection`);
+              console.log(`Player ${userId} removed from room ${roomCode} after disconnection timeout`);
             }
+            
+            // Clean up the timer reference
+            disconnectionTimers.delete(userId);
           } catch (error) {
             console.error(`Error handling disconnection for user ${userId} in room ${roomCode}:`, error);
+            disconnectionTimers.delete(userId);
           }
-        })();
+        }, 5000); // 30 second grace period
+        
+        disconnectionTimers.set(userId, timer);
+        console.log(`Set disconnection timer for user ${userId} in room ${roomCode}`);
       }
     }
   });
