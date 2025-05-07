@@ -2,6 +2,7 @@ import { Room } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import LeaveButton from './LeaveRoom';
+import { SettingsModal } from './SettingsModal';
 
 interface RoomInfoProps {
 	room: Room;
@@ -10,9 +11,11 @@ interface RoomInfoProps {
 	totalRounds: number;
 	songsPerPlayer: number;
 	timePerSong: number;
+	isHost: boolean;
+	userId: string;
+	hostId: string;
 }
 
-// FIXME: Update according to schema
 export function RoomInfo({
 	room,
 	hostUserName,
@@ -20,6 +23,9 @@ export function RoomInfo({
 	totalRounds,
 	songsPerPlayer,
 	timePerSong,
+	isHost,
+	userId,
+	hostId,
 }: RoomInfoProps) {
 	const { toast } = useToast();
 	const { code } = room;
@@ -85,8 +91,16 @@ export function RoomInfo({
 					</span>
 				</div>
 			</div>
-			<div className='mt-5'>
-				<LeaveButton roomCode={code} />
+			<div className={`mt-5 ${(isHost || userId === hostId) ? 'flex justify-between' : 'flex justify-end'}`}>
+			  {(isHost || userId === hostId) && (
+			    <SettingsModal 
+			      roomCode={code}
+			      currentSongsPerPlayer={songsPerPlayer}
+			      currentTimePerSong={timePerSong}
+			      isHost={true}
+			    />
+			  )}
+			  <LeaveButton roomCode={code} />
 			</div>
 		</div>
 	);
