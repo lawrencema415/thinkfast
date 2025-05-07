@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { roomCode } = body;
 
-    const roomId = await storage.resolveRoomId(roomCode);
+    const roomId = await storage.getRoomByCode(roomCode);
     if (!roomId) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
