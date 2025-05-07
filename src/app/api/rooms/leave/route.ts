@@ -11,6 +11,11 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { roomCode } = body;
 
+    const roomId = await storage.getRoomByCode(roomCode);
+    if (!roomId) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+    }
+
     const gameState = await storage.getGameStateByRoomCode(roomCode);
     if (!gameState) {
       return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
@@ -21,6 +26,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not in room' }, { status: 400 });
     }
 
+    const displayName = user.user_metadata?.display_name || 'A new player';
+    const message = {
+      id: crypto.randomUUID(),
+      roomId: roomId,
+      content: `${displayName} has left the room`,
+      type: 'system',
+      createdAt: new Date()
+    };
+    
+    gameState.messages.push(message);
+    
+    // Save the updated game state
+    await storage.saveGameState(roomId, gameState);
     await storage.removePlayerFromRoom(roomCode, user.id);
     await broadcastGameState(roomCode, storage);
 
