@@ -39,9 +39,6 @@ export function RoomInfo({
 		}
 	};
 
-	console.log('id', userId, hostId); // Add this line to log the values of userId and hostId to the console
-	console.log(userId === hostId); // Add this line to log the result of the comparison to the console
-
 	return (
 		<div className='bg-dark rounded-lg shadow-lg p-4 mb-6'>
 			<div className='flex justify-between items-center mb-4'>
