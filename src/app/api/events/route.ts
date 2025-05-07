@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
               }
               
               // Remove the player from the room
-              await storage.removePlayerFromRoom(roomCode, user);
+              await storage.removePlayerFromRoom(roomCode, user, 'disconnect');
               
               // Broadcast the updated game state to all remaining players
               await broadcastGameState(roomCode, storage);
