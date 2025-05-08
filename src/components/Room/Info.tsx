@@ -4,6 +4,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import LeaveButton from './LeaveRoom';
 import { SettingsModal } from './SettingsModal';
 import StartGameButton from './StartGame';
+import { DummyButton } from './DummyButton';
 
 interface RoomInfoProps {
 	room: Room;
@@ -114,6 +115,11 @@ export function RoomInfo({
 					timePerSong={timePerSong}
 				/>
 				<LeaveButton roomCode={code} />
+				<div>
+					<DummyButton 
+						roomCode={code}
+					/>
+				</div>
 			</div>
 		</div>
 	);
