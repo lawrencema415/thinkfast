@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users, Clock } from 'lucide-react';
 import { useState } from 'react';
-import { useGame } from '@/hooks/use-game';
+import { useGame } from '@/hooks/useGame';
 import { useRouter } from 'next/navigation';
 
 export function CreateRoomForm() {

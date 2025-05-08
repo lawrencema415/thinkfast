@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useGame } from '@/hooks/use-game';
+import { useGame } from '@/hooks/useGame';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

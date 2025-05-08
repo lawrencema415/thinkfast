@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { Users, Clock } from 'lucide-react';
-import { useGame } from '@/hooks/use-game';
+import { useGame } from '@/hooks/useGame';
 import { useRouter } from 'next/navigation';
 import { GameState } from '@/shared/schema';
 

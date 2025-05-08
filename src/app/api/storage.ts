@@ -23,7 +23,7 @@ const generateRoomCode = (): string =>  {
   // Use characters that are easy to read and type
   // Exclude easily confused characters like 0/O, 1/I/L, etc.
   const characters = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  const codeLength = 4;
+  const codeLength = 5;
   let code = "";
 
   // Generate random characters for the code

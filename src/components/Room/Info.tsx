@@ -1,5 +1,5 @@
 import { Room } from '@shared/schema';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import LeaveButton from './LeaveRoom';
 import { SettingsModal } from './SettingsModal';

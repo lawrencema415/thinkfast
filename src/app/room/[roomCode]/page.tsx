@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 import { useSSE } from '@/hooks/useSSE';
 import { GameState } from '@/shared/schema';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +15,7 @@ import { SongQueue } from '@/components/Room/SongQueue';
 import { NavigationBar } from '@/components/NavigationBar';
 import { isEmpty } from 'lodash';
 import { ChatBox } from '@/components/Room/ChatBox';
+import { useAxiosErrorHandler } from '@/hooks/useAxiosErrorHandler';
 
 // FIXME: Update according to schema
 export default function RoomPage() {
@@ -25,63 +26,42 @@ export default function RoomPage() {
 	const { toast } = useToast();
 	const { gameState } = useSSE(roomCode);
 	const { loading, user } = useAuth();
+	const handleError = useAxiosErrorHandler();
 
 	useEffect(() => {
-		if (gameState) {
-			setInitialState(gameState);
-			
-			// Check if user is in the players list
-			if (user && gameState.players) {
-				const isUserInRoom = gameState.players.some(player => player.user.id === user.id);
-				if (!isUserInRoom) {
-					toast({
-						title: 'Access Denied',
-						description: 'You cannot access this room',
-						variant: 'destructive',
-					});
-					router.push('/'); // Redirect to homepage
-				}
-			}
-		}
-		console.log('gameState when SSE', gameState);
-	}, [gameState, user, router, toast]);
+		const init = async () => {
+			if (!user) return;
 
-	useEffect(() => {
-		const fetchGameState = async () => {
 			try {
 				const response = await axios.get(
 					`/api/game/state?roomCode=${roomCode}`
 				);
-				setInitialState(response.data.gameState);
-				
-				// Check if user is in the players list after initial fetch
-				// if (user && response.data.gameState.players) {
-				// 	const isUserInRoom = response.data.gameState.players.some(
-				// 		player => player.user.id === user.id
-				// 	);
-				// 	if (!isUserInRoom) {
-				// 		toast({
-				// 			title: 'Access Denied',
-				// 			description: 'You cannot access this room',
-				// 			variant: 'destructive',
-				// 		});
-				// 		router.push('/'); // Redirect to homepage
-				// 	}
-				// }
+				const gameState: GameState = response.data.gameState;
+
+				const isUserInRoom = gameState.players?.some(
+					(player) => player.user.id === user.id
+				);
+
+				if (!isUserInRoom) {
+					router.push('/');
+					toast({
+						title: 'Access denied',
+						description: 'You are not in this room',
+						variant: 'destructive',
+						duration: 3000,
+					});
+					return;
+				}
+
+				setInitialState(gameState);
 			} catch (error) {
-				console.error('Error fetching game state:', error);
-				toast({
-					title: 'Error',
-					description: 'Failed to fetch game state',
-					variant: 'destructive',
-				});
+				router.push('/');
+				handleError(error, 'Failed to fetch game state');
 			}
 		};
 
-		if (user) {
-			fetchGameState();
-		}
-	}, [roomCode, toast, user, router]);
+		init();
+	}, [handleError, roomCode, router, toast, user, gameState]);
 
 	if (loading || isEmpty(initialState) || !user) {
 		return <LoadingScreen />;
@@ -105,7 +85,7 @@ export default function RoomPage() {
 	} = initialState;
 
 	// Final check before rendering - if user somehow got past the useEffect checks
-	const isUserInRoom = players.some(player => player.user.id === user.id);
+	const isUserInRoom = players.some((player) => player.user.id === user.id);
 	if (!isUserInRoom) {
 		router.push('/');
 		return <LoadingScreen />;
@@ -159,10 +139,10 @@ export default function RoomPage() {
 						/>
 					</div>
 					<div className='lg:w-1/4'>
-						<SongQueue 
-							songQueue={songs} 
-							currentTrackIndex={0} 
-							userId={id} 
+						<SongQueue
+							songQueue={songs}
+							currentTrackIndex={0}
+							userId={id}
 							roomCode={roomCode}
 						/>
 					</div>

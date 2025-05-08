@@ -2,7 +2,7 @@
 
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { GameProvider } from '@/hooks/use-game';
+import { GameProvider } from '@/hooks/useGame';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Create a client

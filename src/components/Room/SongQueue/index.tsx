@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Song } from '@shared/schema';
 import { MusicWave } from '@/components/ui/music-wave';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 import ReactPlayer from 'react-player';
 import { AddSong } from './AddSong';
 import { Button } from '@/components/ui/button';
@@ -31,14 +31,14 @@ export function SongQueue({
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 
 	// Filter songs to only show those added by the current user
-	const userSongs = songQueue.filter(song => song.userId === userId);
+	const userSongs = songQueue.filter((song) => song.userId === userId);
 
 	const handleRemoveSong = async (songId: string) => {
 		try {
 			setIsRemoving(songId);
 			await axios.post('/api/songs/remove', {
 				roomCode,
-				songId
+				songId,
 			});
 			toast({
 				title: 'Song removed',
@@ -63,11 +63,7 @@ export function SongQueue({
 				<AddSong roomCode={roomCode} songQueue={[]} userId={userId} />
 			</div>
 			<div>
-				<AddedSongs
-					songQueue={songQueue}
-					roomCode={roomCode}
-					userId={userId}
-				/>
+				<AddedSongs songQueue={songQueue} roomCode={roomCode} userId={userId} />
 			</div>
 
 			<div className='p-4 space-y-3'>
@@ -102,7 +98,7 @@ export function SongQueue({
 									{displayNumber}
 								</span>
 							</div>
-							
+
 							<div className='flex-1 flex items-center'>
 								{song.albumArt && (
 									<Image
@@ -117,7 +113,7 @@ export function SongQueue({
 									<h3 className='font-medium text-sm'>{song.title}</h3>
 									<p className='text-xs text-gray-400'>{song.artist}</p>
 								</div>
-								
+
 								<div className='flex items-center space-x-2'>
 									{isCurrent ? (
 										<MusicWave size='sm' />

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { UserX } from 'lucide-react';
 import { useState } from 'react';
 import axios from 'axios';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 
 interface PlayerListProps {
 	players: Player[];
@@ -28,7 +28,7 @@ PlayerListProps) {
 
 	const handleKickPlayer = async (playerId: string) => {
 		if (userId !== hostId) return;
-		
+
 		try {
 			setIsRemoving(playerId);
 			await axios.post('/api/rooms/remove', {
@@ -67,7 +67,11 @@ PlayerListProps) {
 								<AvatarFallback>User</AvatarFallback>
 							</Avatar>
 							<div>
-								<p className={`font-medium ${user?.id === userId ? 'text-yellow-400' : ''}`}>
+								<p
+									className={`font-medium ${
+										user?.id === userId ? 'text-yellow-400' : ''
+									}`}
+								>
 									{user?.user_metadata?.display_name}
 									{user?.id === hostId && (
 										<span className='text-xs text-primary ml-1'>(Host)</span>
@@ -78,13 +82,13 @@ PlayerListProps) {
 								</p> */}
 							</div>
 						</div>
-						<div className="flex items-center gap-2">
+						<div className='flex items-center gap-2'>
 							<span className='text-lg font-bold text-accent'>0</span>
 							{userId === hostId && user?.id !== userId && (
-								<Button 
-									variant="ghost" 
-									size="sm" 
-									className="text-red-500 hover:text-red-700 hover:bg-red-100 p-1 h-auto"
+								<Button
+									variant='ghost'
+									size='sm'
+									className='text-red-500 hover:text-red-700 hover:bg-red-100 p-1 h-auto'
 									onClick={() => handleKickPlayer(user?.id)}
 									disabled={isRemoving === user?.id}
 								>

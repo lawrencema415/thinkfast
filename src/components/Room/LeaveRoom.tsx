@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { useGame } from '@/hooks/use-game';
+import { useGame } from '@/hooks/useGame';
 
 interface Props {
 	roomCode: string;

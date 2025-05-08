@@ -2,7 +2,7 @@
 
 import { createContext, ReactNode, useContext } from 'react';
 import { useMutation, UseMutationResult } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import type { GameState, Room, Song } from '../shared/schema';
 import { useRouter } from 'next/navigation';

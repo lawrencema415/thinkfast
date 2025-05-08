@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Check, X, Pause, Pencil, Search, Volume2 } from 'lucide-react';
 import Image from 'next/image';
-import { useGame } from '@/hooks/use-game';
-import { useToast } from '@/hooks/use-toast';
+import { useGame } from '@/hooks/useGame';
+import { useToast } from '@/hooks/useToast';
 import { SpotifyTrack, searchSpotifyTracks } from '@/lib/spotify';
 import SearchPlatformSelector from './SearchPlatformSelector';
 import { createPortal } from 'react-dom';
@@ -70,7 +70,7 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 		}
 	}, [isOpen]);
 
-	console.log(songQueue)
+	console.log(songQueue);
 
 	// Handle audio element events
 	useEffect(() => {
@@ -219,36 +219,37 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 			albumArt: (selectedResult as SpotifyTrack).album.images[0]?.url,
 			sourceType,
 			sourceId: newSourceId,
-			previewUrl: searchPreviewResults.find(
-			  (track) => track.id === (selectedResult as SpotifyTrack).id
-			)?.preview_url || '',
+			previewUrl:
+				searchPreviewResults.find(
+					(track) => track.id === (selectedResult as SpotifyTrack).id
+				)?.preview_url || '',
 			userId,
 			id: Math.random().toString(36).substring(2, 11),
 		};
 
 		addSongMutation.mutate(
 			{
-			  roomCode,
-			  song: newSong,
+				roomCode,
+				song: newSong,
 			},
 			{
-			onError: () => {
-				toast({
-					title: 'Song already added',
-					description: 'This song has already been added to the queue',
-					variant: 'destructive',
-				});
-			},
-			  onSuccess: () => {
-				toast({
-				  title: 'Song added',
-				  description: 'Your song has been added to the queue',
-				});
-				// Close modal
-				setIsOpen(false);
-			  }
+				onError: () => {
+					toast({
+						title: 'Song already added',
+						description: 'This song has already been added to the queue',
+						variant: 'destructive',
+					});
+				},
+				onSuccess: () => {
+					toast({
+						title: 'Song added',
+						description: 'Your song has been added to the queue',
+					});
+					// Close modal
+					setIsOpen(false);
+				},
 			}
-		  );
+		);
 		// Close modal
 		setIsOpen(false);
 	};

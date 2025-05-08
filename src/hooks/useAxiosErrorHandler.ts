@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
 
 import { useCallback } from 'react';
-import { useToast } from './use-toast';
+import { useToast } from './useToast';
 import { ErrorResponse } from '@/app/types';
 
 export const useAxiosErrorHandler = () => {

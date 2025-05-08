@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, User2 } from 'lucide-react';
 import { sendMessage } from '@/lib/sendMessage';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface ChatBoxProps {
@@ -37,7 +37,7 @@ export function ChatBox({
 			}
 		}
 	};
-	
+
 	// Scroll to bottom when new messages arrive
 	useEffect(() => {
 		scrollToBottom();
@@ -51,7 +51,7 @@ export function ChatBox({
 				await sendMessage({
 					roomCode,
 					content: message.trim(),
-					type: isGuessing ? 'guess' : 'chat'
+					type: isGuessing ? 'guess' : 'chat',
 				});
 				setMessage('');
 			} catch (error) {
@@ -69,11 +69,11 @@ export function ChatBox({
 	// Enhanced function to find user by userId with fallback
 	const findUserByUserId = (userId: string) => {
 		// First try to find the player in the current users array
-		const player = users.find(player => player.user?.id === userId);
-		
+		const player = users.find((player) => player.user?.id === userId);
+
 		// If we found the player, return it
 		if (player) return player;
-		
+
 		// No player found in current users array
 		return null;
 	};
@@ -93,12 +93,13 @@ export function ChatBox({
 						if (msg.user) {
 							player = findUserByUserId(msg.user?.id);
 						}
-						
+
 						const isSystem = msg.type === 'system';
 						const isGuess = msg.type === 'guess';
-						
-						const displayName = msg.user?.user_metadata?.display_name || 'Unknown User';
-						
+
+						const displayName =
+							msg.user?.user_metadata?.display_name || 'Unknown User';
+
 						return (
 							<div
 								key={i}
@@ -119,9 +120,7 @@ export function ChatBox({
 								)}
 								<div className='flex-1 break-words'>
 									{!isSystem && (
-										<span className='font-medium mr-2'>
-											{displayName}:
-										</span>
+										<span className='font-medium mr-2'>{displayName}:</span>
 									)}
 									<span>{msg.content}</span>
 								</div>
