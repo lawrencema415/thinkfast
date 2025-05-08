@@ -40,6 +40,16 @@ export class RedisStorage {
     return crypto.randomUUID();
   }
 
+  async isUserInRoom(roomId: string, userId: string): Promise<User | null> {
+    const key = `gameState:${roomId}`;
+    const gameState = await redis.get<GameState>(key);
+    
+    if (!gameState) return null;
+    
+    const player = gameState.players.find(player => player.user.id === userId);
+    return player ? player.user : null;
+  }
+
   async resolveRoomId(roomIdOrCode: string): Promise<string | null> {
     if (roomIdOrCode.includes('-')) return roomIdOrCode; // UUID
     return await redis.get(`roomCode:${roomIdOrCode}`);

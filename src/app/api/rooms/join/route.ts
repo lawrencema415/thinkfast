@@ -21,8 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Room is not active' }, { status: 400 });
     }
 
-    const isAlreadyInRoom = gameState.players.some(p => p.user.id === user.id);
-    if (isAlreadyInRoom) {
+    if (!!storage.isUserInRoom(roomId, user.id)) {
       return NextResponse.json({ error: 'Already in room' }, { status: 400 });
     }
     

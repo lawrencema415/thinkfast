@@ -21,13 +21,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find room by code using Redis storage
     const roomId = await storage.getRoomByCode(roomCode);
     if (!roomId) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    // Get the current game state
+    if (!storage.isUserInRoom(roomId, user.id)){
+      return NextResponse.json({ error: 'User is not in the room' }, { status: 403 });
+    }
+
     const gameState = await storage.getGameStateByRoomCode(roomCode);
     if (!gameState) {
       return NextResponse.json({ error: 'Game state not found' }, { status: 404 });

@@ -6,10 +6,8 @@ import { broadcastGameState } from '@/lib/broadcast';
 // NOTE: Possibly improve chat functionality later with: https://upstash.com/blog/realtime-notifications
 export async function POST(req: Request) {
   try {
-    // Verify authentication using our server-side auth helper
     const { user, response } = await verifyAuthInRouteHandler();
     
-    // If not authenticated, return the error response
     if (!user) {
       return response;
     }
@@ -24,32 +22,31 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find room by code using Redis storage
     const roomId = await storage.getRoomByCode(roomCode);
     if (!roomId) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    // Get the current game state
+    if (!storage.isUserInRoom(roomId, user.id)){
+      return NextResponse.json({ error: 'User is not in the room' }, { status: 403 });
+    }
+
     const gameState = await storage.getGameStateByRoomCode(roomCode);
     if (!gameState) {
       return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
     }
 
-    // Create a message object with the full user object
     const message = {
       id: crypto.randomUUID(),
       roomId: roomId,
-      user: user, // Include the full user object
+      user: user, 
       content,
       type: messageType,
       createdAt: new Date()
     };
 
-    // Add the message to the game state
     gameState.messages.push(message);
     
-    // Save the updated game state and broadcast in one operation
     await storage.saveGameState(roomId, gameState);
     await broadcastGameState(roomCode, storage);
 
@@ -62,43 +59,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
-// // GET request handler to retrieve messages for a room
-// export async function GET(request: NextRequest) {
-//   try {
-//     // Verify authentication using our server-side auth helper
-//     const { user, response } = await verifyAuthInRouteHandler();
-    
-//     // If not authenticated, return the error response
-//     if (!user) {
-//       return response;
-//     }
-
-//     const url = new URL(request.url);
-//     const roomCode = url.searchParams.get('roomCode');
-
-//     if (!roomCode) {
-//       return NextResponse.json(
-//         { error: 'Room code is required' },
-//         { status: 400 }
-//       );
-//     }
-
-//     // Find room by code using Redis storage
-//     const room = await storage.getRoomByCode(roomCode);
-//     if (!room) {
-//       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
-//     }
-
-//     // Get messages for the room
-//     const messages = await storage.getMessagesByRoomId(room.id);
-
-//     return NextResponse.json({ success: true, messages });
-//   } catch (error) {
-//     console.error('Error retrieving messages:', error);
-//     return NextResponse.json(
-//       { error: 'Failed to retrieve messages' },
-//       { status: 500 }
-//     );
-//   }
-// }
