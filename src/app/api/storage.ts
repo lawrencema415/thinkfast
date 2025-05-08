@@ -301,20 +301,47 @@ export class RedisStorage {
     return json.songs;
   }
 
-  async addSongToRoom(roomId: string, song: Song): Promise<Song> {
-    const resolvedRoomId = await this.resolveRoomId(roomId);
-    if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
+  async addSongToRoom(roomCode: string, song: Song): Promise<Song> {
+    const roomId = await this.getRoomByCode(roomCode);
+    if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
   
-    const key = `gameState:${resolvedRoomId}`;
+    const key = `gameState:${roomId}`;
     const json = await redis.get<string>(key);
-    if (!json) throw new Error(`Game state not found for room ${resolvedRoomId}`);
+    if (!json) throw new Error(`Game state not found for room ${roomId}`);
   
-    const gameState = JSON.parse(json) as GameState;
-  
+    let gameState: GameState;
+    
+    try {
+      gameState = typeof json === 'string' ? JSON.parse(json) : json;
+    } catch (error) {
+      console.error('Error parsing game state:', error);
+      throw new Error('Failed to parse game state');
+    }
   
     gameState.songs.push(song);
     await redis.set(key, JSON.stringify(gameState)); // Ensure game state is stringified
     return song;
+  }
+
+  async removeSongFromRoom(roomCode: string, songId: string): Promise<void> {
+    const roomId = await this.getRoomByCode(roomCode);
+    if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
+
+    const key = `gameState:${roomId}`;
+    const json = await redis.get<string>(key);
+    if (!json) throw new Error(`Game state not found for room ${roomId}`);
+
+    let gameState: GameState;
+    
+    try {
+      gameState = typeof json === 'string' ? JSON.parse(json) : json;
+    } catch (error) {
+      console.error('Error parsing game state:', error);
+      throw new Error('Failed to parse game state');
+    }
+
+    gameState.songs = gameState.songs.filter(song => song.id !== songId);
+    await redis.set(key, JSON.stringify(gameState));
   }
 
   async addMessageToRoom(roomId: string, message: Omit<Message, 'id' | 'timestamp'>): Promise<Message> {

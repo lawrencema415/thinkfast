@@ -120,7 +120,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 		{ roomCode: string; song: Song }
 	>({
 		mutationFn: async ({ roomCode, song }) => {
-			const res = await apiRequest('POST', '/api/songs', {
+			const res = await apiRequest('POST', '/api/songs/add', {
 				roomCode,
 				song,
 			});
