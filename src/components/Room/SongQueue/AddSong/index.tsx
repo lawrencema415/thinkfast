@@ -1,3 +1,7 @@
+'use client';
+
+import type React from 'react';
+
 import { useState, useEffect, useRef } from 'react';
 import {
 	Dialog,
@@ -8,13 +12,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, X, Pause, Pencil, Search, Volume2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import Image from 'next/image';
 import { useGame } from '@/hooks/useGame';
 import { useToast } from '@/hooks/useToast';
-import { SpotifyTrack, searchSpotifyTracks } from '@/lib/spotify';
+import { type SpotifyTrack, searchSpotifyTracks } from '@/lib/spotify';
 import SearchPlatformSelector from './SearchPlatformSelector';
 import { createPortal } from 'react-dom';
+import MusicPlayer from './MusicPlayer';
 
 interface AddSongProps {
 	roomCode: string;
@@ -45,8 +50,6 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 	const [isSearching, setIsSearching] = useState(false);
 	const [customTitle, setCustomTitle] = useState('');
 	const [customArtist, setCustomArtist] = useState('');
-	const [isEditing, setIsEditing] = useState(false);
-	const [isPlaying, setIsPlaying] = useState(false);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
 	// Clear state when modal opens/closes
@@ -58,8 +61,6 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 			setIsSearching(false);
 			setCustomTitle('');
 			setCustomArtist('');
-			setIsEditing(false);
-			setIsPlaying(false);
 			setPreviewUrl(null);
 
 			// Stop any playing audio
@@ -77,20 +78,6 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 		setMounted(true);
 		const root = document.getElementById('modal-root');
 		setModalRoot(root);
-
-		const audioElement = audioRef.current;
-
-		if (audioElement) {
-			const handleAudioEnd = () => {
-				setIsPlaying(false);
-			};
-
-			audioElement.addEventListener('ended', handleAudioEnd);
-
-			return () => {
-				audioElement.removeEventListener('ended', handleAudioEnd);
-			};
-		}
 	}, []);
 
 	// When a result is selected, update custom title/artist
@@ -138,73 +125,17 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 
 	const handleSelectResult = (result: SpotifyTrack) => {
 		setSelectedResult(result);
-		setIsEditing(false);
 
 		// Set preview URL if it's a Spotify track with preview
 		if (sourceType === 'spotify') {
 			const spotifyTrack = result as SpotifyTrack;
-			setPreviewUrl(spotifyTrack.preview_url);
-		}
-	};
-
-	const handlePreviewPlay = (result: SpotifyTrack, e: React.MouseEvent) => {
-		e.stopPropagation(); // Prevent selecting the result when clicking the preview button
-
-		// For Spotify tracks
-		if (sourceType === 'spotify') {
-			const spotifyTrack = result as SpotifyTrack;
-			// Find the matching preview result from searchPreviewResults
 			const previewResult =
 				searchPreviewResults?.find((track) => track.id === spotifyTrack.id) ||
-				spotifyTrack; // Fallback to the original track if preview not found
-			const previewUrl = previewResult?.preview_url;
+				spotifyTrack;
+			const preview = previewResult?.preview_url;
 
-			if (!previewUrl) {
-				toast({
-					title: 'Preview unavailable',
-					description: 'No preview available for this track',
-					variant: 'destructive',
-				});
-				return;
-			}
-
-			// If already playing this track, stop it
-			if (isPlaying && previewUrl === audioRef.current?.src) {
-				if (audioRef.current) {
-					audioRef.current.pause();
-					setIsPlaying(false);
-				}
-			} else {
-				// Play the track
-				setPreviewUrl(previewUrl);
-				if (audioRef.current) {
-					audioRef.current.src = previewUrl;
-					audioRef.current.currentTime = 0;
-					audioRef.current.play().catch((error) => {
-						console.error('Error playing preview:', error);
-						toast({
-							title: 'Playback error',
-							description: 'Could not play preview',
-							variant: 'destructive',
-						});
-					});
-					setIsPlaying(true);
-				}
-			}
+			setPreviewUrl(preview);
 		}
-		// For YouTube videos
-		else {
-			toast({
-				title: 'YouTube preview',
-				description:
-					'Preview not available for YouTube tracks in the search interface',
-				variant: 'default',
-			});
-		}
-	};
-
-	const handleToggleEdit = () => {
-		setIsEditing(!isEditing);
 	};
 
 	const handleAddSong = () => {
@@ -282,6 +213,10 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 		}
 	};
 
+	const selectedPreviewResult = searchPreviewResults?.find(
+		(track) => track.id === selectedResult?.id
+	);
+
 	return (
 		<>
 			<Button
@@ -298,7 +233,7 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 					<Dialog open={isOpen} onOpenChange={setIsOpen}>
 						<DialogContent className='bg-dark text-white border-gray-700 sm:max-w-lg'>
 							{/* Hidden audio element for previews */}
-							<audio ref={audioRef} className='hidden' />
+							<audio ref={audioRef} className='hidden' preload='metadata' />
 
 							<DialogHeader>
 								<DialogTitle className='font-heading text-lg'>
@@ -366,7 +301,7 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 													onClick={() => handleSelectResult(result)}
 												>
 													<Image
-														src={renderThumbnail(result)}
+														src={renderThumbnail(result) || '/placeholder.svg'}
 														alt='Album cover'
 														className='w-10 h-10 rounded mr-3'
 														height={32}
@@ -380,146 +315,24 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 															{renderArtist(result)}
 														</p>
 													</div>
-													<div>
-														{isSelected(result) ? (
-															<Button
-																variant='ghost'
-																size='icon'
-																className='h-8 w-8 text-foreground hover:text-foreground/80'
-															>
-																<Check className='h-4 w-4' />
-															</Button>
-														) : (
-															<Button
-																variant='ghost'
-																size='icon'
-																className='h-8 w-8 text-gray-400 hover:text-white'
-																onClick={(e) => handlePreviewPlay(result, e)}
-															>
-																{sourceType === 'spotify' &&
-																isPlaying &&
-																previewUrl ===
-																	(result as SpotifyTrack).preview_url ? (
-																	<Pause className='h-4 w-4' />
-																) : (
-																	<Volume2 className='h-4 w-4' />
-																)}
-															</Button>
-														)}
-													</div>
 												</div>
 											))}
 										</div>
 									</div>
 								)}
 
-								{selectedResult && (
-									<div className='bg-gray-800 rounded-lg p-3'>
-										<h4 className='font-medium mb-2'>Selected Song</h4>
-										{isEditing ? (
-											<div className='space-y-2 p-2'>
-												<div>
-													<label className='text-xs text-gray-400'>Title</label>
-													<Input
-														value={customTitle}
-														onChange={(e) => setCustomTitle(e.target.value)}
-														className='h-8 mt-1'
-													/>
-												</div>
-												<div>
-													<label className='text-xs text-gray-400'>
-														Artist
-													</label>
-													<Input
-														value={customArtist}
-														onChange={(e) => setCustomArtist(e.target.value)}
-														className='h-8 mt-1'
-													/>
-												</div>
-												<div className='flex justify-end'>
-													<Button
-														variant='outline'
-														size='sm'
-														onClick={handleToggleEdit}
-													>
-														Done
-													</Button>
-												</div>
-											</div>
-										) : (
-											<div className='flex items-center p-2 bg-muted border border-border/30 rounded-lg'>
-												<Image
-													src={renderThumbnail(selectedResult)}
-													alt='Album cover'
-													className='w-10 h-10 rounded mr-3'
-													height={32}
-													width={32}
-												/>
-												<div className='flex-1'>
-													<div className='flex items-center'>
-														<h5 className='text-sm font-medium text-foreground'>
-															{customTitle}
-														</h5>
-														<Button
-															variant='ghost'
-															size='icon'
-															className='ml-1 h-6 w-6 text-xs text-muted-foreground hover:text-foreground'
-															onClick={handleToggleEdit}
-														>
-															<Pencil className='h-3 w-3' />
-														</Button>
-													</div>
-													<p className='text-xs text-muted-foreground'>
-														{customArtist}
-													</p>
-												</div>
-												<div className='flex space-x-1'>
-													{sourceType === 'spotify' && (
-														<Button
-															variant='ghost'
-															size='icon'
-															className={`h-8 w-8 ${
-																isPlaying
-																	? 'text-primary'
-																	: 'text-gray-400 hover:text-white'
-															}`}
-															onClick={(e) =>
-																handlePreviewPlay(selectedResult, e)
-															}
-															disabled={
-																sourceType === 'spotify' &&
-																!searchPreviewResults?.find(
-																	(track) =>
-																		track.id ===
-																		(selectedResult as SpotifyTrack).id
-																)?.preview_url
-															}
-														>
-															{isPlaying &&
-															previewUrl ===
-																searchPreviewResults?.find(
-																	(track) =>
-																		track.id ===
-																		(selectedResult as SpotifyTrack).id
-																)?.preview_url ? (
-																<Pause className='h-4 w-4' />
-															) : (
-																<Volume2 className='h-4 w-4' />
-															)}
-														</Button>
-													)}
-													<Button
-														variant='ghost'
-														size='icon'
-														className='h-8 w-8 text-gray-400 hover:text-error'
-														onClick={() => setSelectedResult(null)}
-													>
-														<X className='h-4 w-4' />
-													</Button>
-												</div>
-											</div>
-										)}
-									</div>
+								{selectedResult && previewUrl && (
+									<MusicPlayer
+										audioRef={audioRef}
+										previewUrl={previewUrl}
+										thumbnailUrl={
+											renderThumbnail(selectedResult) || '/placeholder.svg'
+										}
+										customTitle={customTitle}
+										setCustomTitle={setCustomTitle}
+										title={selectedPreviewResult?.name || ''}
+										artist={selectedPreviewResult?.artists?.[0]?.name || ''}
+									/>
 								)}
 							</div>
 
