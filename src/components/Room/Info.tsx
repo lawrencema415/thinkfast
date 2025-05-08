@@ -42,7 +42,17 @@ export function RoomInfo({
 	return (
 		<div className='bg-dark rounded-lg shadow-lg p-4 mb-6'>
 			<div className='flex justify-between items-center mb-4'>
-				<h2 className='font-heading text-lg font-semibold'>Room Code</h2>
+				<div className='flex items-center gap-2'>
+					<h2 className='font-heading text-lg font-semibold'>Room Code</h2>
+					{userId === hostId && (
+						<SettingsModal
+							roomCode={code}
+							currentSongsPerPlayer={songsPerPlayer}
+							currentTimePerSong={timePerSong}
+							isHost={true}
+						/>
+					)}
+				</div>
 				<Tooltip.Provider delayDuration={100}>
 					<Tooltip.Root>
 						<Tooltip.Trigger asChild>
@@ -90,14 +100,6 @@ export function RoomInfo({
 				</div>
 			</div>
 			<div className='mt-5 flex space-x-2'>
-				{userId === hostId && (
-					<SettingsModal
-						roomCode={code}
-						currentSongsPerPlayer={songsPerPlayer}
-						currentTimePerSong={timePerSong}
-						isHost={true}
-					/>
-				)}
 				<LeaveButton roomCode={code} />
 			</div>
 		</div>

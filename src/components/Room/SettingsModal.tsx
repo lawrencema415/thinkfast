@@ -14,6 +14,12 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Settings } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface SettingsModalProps {
 	roomCode: string;
@@ -106,18 +112,27 @@ export function SettingsModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
-			<DialogTrigger asChild>
-				<Button
-					variant='outline'
-					className={`flex items-center gap-2 ${
-						!isHost ? 'opacity-50 cursor-not-allowed' : ''
-					}`}
-					disabled={!isHost}
-				>
-					<Settings className='h-4 w-4' />
-					Settings
-				</Button>
-			</DialogTrigger>
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<DialogTrigger asChild>
+							<Button
+								variant='ghost'
+								size='icon'
+								className={`h-10 w-10 rounded-full ${
+									!isHost ? 'opacity-50 cursor-not-allowed' : ''
+								}`}
+								disabled={!isHost}
+							>
+								<Settings className='h-6 w-6' />
+							</Button>
+						</DialogTrigger>
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>Settings</p>
+					</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
 			<DialogContent className='bg-black text-white border-zinc-800 sm:max-w-[425px]'>
 				<DialogHeader className='mb-4'>
 					<DialogTitle className='text-xl font-bold'>Game Settings</DialogTitle>
