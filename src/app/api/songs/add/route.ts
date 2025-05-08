@@ -32,6 +32,11 @@ export async function POST(req: Request) {
     if (!gameState) {
       return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
     }
+
+    const songExists = gameState.songs.some(existingSong => existingSong.sourceId === song.sourceId);
+    if (songExists) {
+      return NextResponse.json({ error: 'Song already added' }, { status: 409 });
+    }
     
     await storage.addSongToRoom(roomCode, song)
     await broadcastGameState(roomCode, storage);

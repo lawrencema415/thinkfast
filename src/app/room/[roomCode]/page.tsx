@@ -54,10 +54,10 @@ export default function RoomPage() {
 				);
 				setInitialState(response.data.gameState);
 				
-				// // Check if user is in the players list after initial fetch
+				// Check if user is in the players list after initial fetch
 				// if (user && response.data.gameState.players) {
 				// 	const isUserInRoom = response.data.gameState.players.some(
-				// 		(player: Player) => player.user.id === user.id
+				// 		player => player.user.id === user.id
 				// 	);
 				// 	if (!isUserInRoom) {
 				// 		toast({
