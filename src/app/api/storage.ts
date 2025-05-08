@@ -40,7 +40,9 @@ export class RedisStorage {
     return crypto.randomUUID();
   }
 
+
   async isUserInRoom(roomId: string, userId: string): Promise<boolean | null> {
+
     const key = `gameState:${roomId}`;
     const gameState = await redis.get<GameState>(key);
     

@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     const isUserInRoom = await storage.isUserInRoom(roomId, user.id);
     if (isUserInRoom){
       return NextResponse.json({ error: 'You are already in this room', code: 'ALREADY_IN_ROOM' }, { status: 409 })
+
     }
     
     await storage.addPlayerToRoom(roomCode, user);
