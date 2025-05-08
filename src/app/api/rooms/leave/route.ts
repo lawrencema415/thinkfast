@@ -21,10 +21,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
     }
 
-    const wasInRoom = gameState.players.some(p => p.user.id === user.id);
-    if (!wasInRoom) {
+    const isUserInRoom = await storage.isUserInRoom(roomId, user.id);
+    if (!isUserInRoom) {
       return NextResponse.json({ error: 'User not in room' }, { status: 400 });
     }
+
+    // const wasInRoom = gameState.players.some(p => p.user.id === user.id);
+    // if (!wasInRoom) {
+    //   return NextResponse.json({ error: 'User not in room' }, { status: 400 });
+    // }
 
     await storage.removePlayerFromRoom(roomCode, user, 'leave');
     await broadcastGameState(roomCode, storage);

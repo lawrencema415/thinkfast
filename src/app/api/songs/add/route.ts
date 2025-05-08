@@ -26,7 +26,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    if (!storage.isUserInRoom(roomId, user.id)){
+    const isUserInRoom = await storage.isUserInRoom(roomId, user.id);
+    if (!isUserInRoom){
       return NextResponse.json({ error: 'User is not in the room' }, { status: 403 });
     }
 
@@ -38,6 +39,16 @@ export async function POST(req: Request) {
     const songExists = gameState.songs.some(existingSong => existingSong.sourceId === song.sourceId);
     if (songExists) {
       return NextResponse.json({ error: 'Song already added' }, { status: 409 });
+    }
+
+    // Validate song count for user does not exceed songsPerPlayer
+    const userSongCount = gameState.songs.filter(existingSong => existingSong.userId === user.id).length;
+    
+    if (userSongCount >= gameState.songsPerPlayer) {
+      return NextResponse.json(
+        { error: `You have reached the maximum limit of ${gameState.songsPerPlayer} songs per player` },
+        { status: 403 }
+      );
     }
     
     await storage.addSongToRoom(roomCode, song)

@@ -11,6 +11,7 @@ const messages: string[] = [];
 // Make sure the disconnectionTimers map is properly scoped
 // Move it outside the function to ensure it's shared across requests
 const disconnectionTimers = new Map<string, NodeJS.Timeout>();
+const GRACE_PERIOD = 20000 
 
 export async function GET(request: NextRequest) {
   const { user } = await verifyAuthInRouteHandler();
@@ -156,7 +157,7 @@ export async function GET(request: NextRequest) {
             console.error(`Error handling disconnection for user ${userId} in room ${roomCode}:`, error);
             disconnectionTimers.delete(userId);
           }
-        }, 5000); // 5 second grace period
+        }, GRACE_PERIOD); // 5 second grace period
         
         disconnectionTimers.set(userId, timer);
         console.log(`Set disconnection timer for user ${userId} in room ${roomCode}`);
