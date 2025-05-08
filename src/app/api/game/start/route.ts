@@ -4,6 +4,8 @@ import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { broadcastGameState } from '@/lib/broadcast';
 import { Player } from '@/shared/schema';
 
+const IS_PLAYING = false;
+
 export async function POST(req: Request) {
   const { user, response } = await verifyAuthInRouteHandler();
   if (!user) return response;
@@ -32,13 +34,15 @@ export async function POST(req: Request) {
   }
 
   // Activate room and set game settings
-  gameState.isPlaying = true;
+  gameState.isPlaying = IS_PLAYING;
   gameState.songsPerPlayer = songsPerPlayer;
   gameState.timePerSong = timePerSong;
 
+  
   // TODO: Clean up saveGameState to use roomCode and convert to roomId
   // make it more consistent with the rest of the codebase
   await storage.saveGameState(roomId, gameState);
+  await storage.shuffleSongsInRoom(roomCode);
   
   await broadcastGameState(roomCode, storage);
 

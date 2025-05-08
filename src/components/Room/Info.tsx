@@ -42,6 +42,8 @@ export function RoomInfo({
 		}
 	};
 
+	console.log('songs', songs);
+
 	const disableStart = !songs.length;
 
 	return (
