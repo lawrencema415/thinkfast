@@ -70,6 +70,8 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 		}
 	}, [isOpen]);
 
+	console.log(songQueue)
+
 	// Handle audio element events
 	useEffect(() => {
 		setMounted(true);
@@ -211,45 +213,42 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 		// Determine the sourceId of the selected result
 		const newSourceId = (selectedResult as SpotifyTrack).id;
 
-		// FIXME: type
-		// Check for duplicates in the existing queue, using sourceId, SpotifyTrack type might be incorrect
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const alreadyAdded = songQueue.some((song: any) => {
-			// assuming song.sourceId is the same field on queued items
-			return song.sourceId === newSourceId;
-		});
+		const newSong = {
+			title: customTitle,
+			artist: customArtist,
+			albumArt: (selectedResult as SpotifyTrack).album.images[0]?.url,
+			sourceType,
+			sourceId: newSourceId,
+			previewUrl: searchPreviewResults.find(
+			  (track) => track.id === (selectedResult as SpotifyTrack).id
+			)?.preview_url || '',
+			userId,
+			id: Math.random().toString(36).substring(2, 11),
+		};
 
-		if (alreadyAdded) {
-			toast({
-				title: 'Song already added',
-				description: 'This song has been added to the queue already',
-				variant: 'destructive',
-			});
-			return;
-		}
-
-		// Build the payload as before
-		let previewUrl: string | null = null;
-		const spotifyTrack = selectedResult as SpotifyTrack;
-		const previewResult = searchPreviewResults.find(
-			(track) => track.id === spotifyTrack.id
-		);
-		previewUrl = previewResult?.preview_url || '';
-
-		addSongMutation.mutate({
-			roomCode,
-			song: {
-				title: customTitle,
-				artist: customArtist,
-				albumArt: (selectedResult as SpotifyTrack).album.images[0]?.url,
-				sourceType,
-				sourceId: newSourceId,
-				previewUrl,
-				userId,
-				id: Math.random().toString(36).substring(2, 11),
+		addSongMutation.mutate(
+			{
+			  roomCode,
+			  song: newSong,
 			},
-		});
-
+			{
+			onError: () => {
+				toast({
+					title: 'Song already added',
+					description: 'This song has already been added to the queue',
+					variant: 'destructive',
+				});
+			},
+			  onSuccess: () => {
+				toast({
+				  title: 'Song added',
+				  description: 'Your song has been added to the queue',
+				});
+				// Close modal
+				setIsOpen(false);
+			  }
+			}
+		  );
 		// Close modal
 		setIsOpen(false);
 	};
