@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { Pause, Play, Volume2, VolumeX, Pencil } from 'lucide-react';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 
@@ -33,11 +33,19 @@ export default function MusicPlayer({
 	setCustomTitle,
 }: MusicPlayerProps) {
 	const progressRef = useRef<HTMLDivElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [currentTime, setCurrentTime] = useState(0);
 	const [duration, setDuration] = useState(30);
 	const [volume, setVolume] = useState(0.5);
 	const [isMuted, setIsMuted] = useState(false);
+	const [showVolume, setShowVolume] = useState(false);
+	const [showTooltip, setShowTooltip] = useState(false);
+
+	// Autofocus input on mount
+	useEffect(() => {
+		inputRef.current?.focus();
+	}, []);
 
 	// When previewUrl changes, reset audio and state
 	useEffect(() => {
@@ -94,15 +102,13 @@ export default function MusicPlayer({
 		if (audio.paused) {
 			try {
 				await audio.play();
-				// setIsPlaying(true); // handled by event listener
 			} catch (err) {
 				alert('Playback failed. Please interact with the page first.');
-				console.error(err);
+				console.log(err);
 				setIsPlaying(false);
 			}
 		} else {
 			audio.pause();
-			// setIsPlaying(false); // handled by event listener
 		}
 	};
 
@@ -122,54 +128,109 @@ export default function MusicPlayer({
 	};
 
 	return (
-		<div className='flex w-full max-w-md items-center gap-4 rounded-md border p-4 shadow-md'>
-			<div className='relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md'>
-				<Image src={thumbnailUrl} alt={title} layout='fill' objectFit='cover' />
-			</div>
-
-			<div className='flex flex-col flex-1 justify-between gap-2'>
-				<div className='text-sm font-medium'>
-					<Input
-						value={customTitle}
-						onChange={(e) => setCustomTitle(e.target.value)}
-						className='bg-white text-black h-2 w-full'
+		<div className='flex w-full max-w-lg items-center gap-4 rounded-lg border border-gray-700 bg-[#18181b] p-4 shadow-md'>
+			{/* Thumbnail and artist */}
+			<div className='flex flex-col items-center w-20'>
+				<div className='relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md'>
+					<Image
+						src={thumbnailUrl}
+						alt={title}
+						fill
+						className='object-cover'
+						sizes='64px'
 					/>
 				</div>
-				<div className='text-xs text-muted-foreground'>{artist}</div>
+				<div className='mt-2 w-full text-center text-xs text-gray-400 truncate'>
+					{artist}
+				</div>
+			</div>
 
+			{/* Song Info and Progress */}
+			<div className='flex flex-1 flex-col gap-2 ml-2'>
+				<div className='relative'>
+					<Input
+						ref={inputRef}
+						value={customTitle}
+						onChange={(e) => setCustomTitle(e.target.value)}
+						className='rounded-md border border-gray-600 bg-zinc-900 px-2 py-1 pr-9 text-base font-semibold text-white placeholder:text-gray-400 focus:border-primary focus:ring-1 focus:ring-primary'
+						style={{ minWidth: 0 }}
+						maxLength={60}
+						onFocus={() => setShowTooltip(true)}
+						onBlur={() => setShowTooltip(false)}
+						placeholder='Song name'
+					/>
+					<Pencil
+						size={18}
+						className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none'
+					/>
+					{showTooltip && (
+						<div className='absolute right-0 top-full mt-1 rounded bg-zinc-800 px-2 py-1 text-xs text-gray-200 shadow-lg z-10'>
+							You can edit the song name
+						</div>
+					)}
+				</div>
 				<div
 					ref={progressRef}
-					className='h-2 w-full cursor-pointer rounded bg-gray-300'
+					className='relative h-2 w-full cursor-pointer rounded bg-gray-700'
 					onClick={handleProgressClick}
 				>
 					<div
-						className='h-full bg-blue-500'
+						className='absolute left-0 top-0 h-2 rounded bg-blue-500'
 						style={{ width: `${(currentTime / duration) * 100}%` }}
 					/>
 				</div>
-
-				<div className='flex items-center justify-between text-sm text-muted-foreground'>
+				<div className='flex items-center justify-between text-xs text-gray-400'>
 					<span>{formatTime(currentTime)}</span>
 					<span>{formatTime(duration)}</span>
 				</div>
 			</div>
 
-			<div className='flex flex-col items-center justify-between gap-2'>
-				<button onClick={togglePlay} className='text-primary hover:opacity-80'>
-					{isPlaying ? <Pause /> : <Play />}
+			{/* Play/Volume controls */}
+			<div className='flex flex-col items-center justify-center gap-3'>
+				<button
+					onClick={togglePlay}
+					className='flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/20 focus:outline-none'
+					aria-label={isPlaying ? 'Pause' : 'Play'}
+				>
+					{isPlaying ? <Pause size={18} /> : <Play size={18} />}
 				</button>
-				<button onClick={toggleMute} className='text-primary hover:opacity-80'>
-					{isMuted || volume === 0 ? <VolumeX /> : <Volume2 />}
-				</button>
-				<input
-					type='range'
-					min={0}
-					max={1}
-					step={0.01}
-					value={volume}
-					onChange={(e) => setVolume(parseFloat(e.target.value))}
-					className='w-20'
-				/>
+				<div className='relative flex flex-col items-center'>
+					<button
+						onClick={toggleMute}
+						onMouseEnter={() => setShowVolume(true)}
+						onMouseLeave={() => setShowVolume(false)}
+						onFocus={() => setShowVolume(true)}
+						onBlur={() => setShowVolume(false)}
+						className='flex h-8 w-8 items-center justify-center rounded-full text-primary transition hover:bg-primary/10 focus:outline-none'
+						aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
+						tabIndex={0}
+					>
+						{isMuted || volume === 0 ? (
+							<VolumeX size={18} />
+						) : (
+							<Volume2 size={18} />
+						)}
+					</button>
+					{/* Popover */}
+					{showVolume && (
+						<div
+							className='absolute left-[-110px] top-1/2 z-10 flex h-8 w-28 -translate-y-1/2 items-center rounded bg-zinc-800 px-3 py-2 shadow-lg'
+							onMouseEnter={() => setShowVolume(true)}
+							onMouseLeave={() => setShowVolume(false)}
+						>
+							<input
+								type='range'
+								min={0}
+								max={1}
+								step={0.01}
+								value={volume}
+								onChange={(e) => setVolume(parseFloat(e.target.value))}
+								className='w-full accent-blue-500'
+								aria-label='Volume'
+							/>
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);

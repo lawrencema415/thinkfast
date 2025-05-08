@@ -241,9 +241,6 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 
 							<div className='space-y-6'>
 								<div>
-									<label className='block text-sm font-medium mb-2'>
-										Search Platform
-									</label>
 									<SearchPlatformSelector
 										sourceType={sourceType}
 										onSelect={(type) => setSourceType(type)}
@@ -251,12 +248,6 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 								</div>
 
 								<div>
-									<label
-										htmlFor='songSearch'
-										className='block text-sm font-medium mb-2'
-									>
-										Search for a song
-									</label>
 									<div className='relative'>
 										<Input
 											id='songSearch'
