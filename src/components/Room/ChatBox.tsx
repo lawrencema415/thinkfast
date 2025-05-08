@@ -89,9 +89,14 @@ export function ChatBox({
 			<ScrollArea className='flex-1 mb-4' ref={scrollAreaRef}>
 				<div className='space-y-4'>
 					{messages.map((msg, i) => {
-						const player = findUserByUserId(msg.user?.id);
+						let player: Player | null = null;
+						if (msg.user) {
+							player = findUserByUserId(msg.user?.id);
+						}
+						
 						const isSystem = msg.type === 'system';
 						const isGuess = msg.type === 'guess';
+						
 						const displayName = msg.user?.user_metadata?.display_name || 'Unknown User';
 						
 						return (
