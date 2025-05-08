@@ -352,6 +352,38 @@ export class RedisStorage {
     await redis.set(key, JSON.stringify(gameState));
   }
 
+  async shuffleSongsInRoom(roomCode: string): Promise<void> {
+    const roomId = await this.getRoomByCode(roomCode);
+    if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
+
+    const key = `gameState:${roomId}`;
+    const json = await redis.get<string>(key);
+    if (!json) throw new Error(`Game state not found for room ${roomId}`);
+
+    let gameState: GameState;
+
+    try {
+      gameState = typeof json === 'string' ? JSON.parse(json) : json;
+    } catch (error) {
+      console.error('Error parsing game state:', error);
+      throw new Error('Failed to parse game state');
+    }
+
+    const songs = [...gameState.songs];
+    for (let i = songs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [songs[i], songs[j]] = [songs[j], songs[i]]; // Swap elements
+    }
+
+    console.log('before', gameState.songs);
+    
+    gameState.songs = songs;
+
+    console.log('after', gameState.songs);
+    
+    await redis.set(key, JSON.stringify(gameState));
+  }
+
   async addMessageToRoom(roomId: string, message: Omit<Message, 'id' | 'timestamp'>): Promise<Message> {
     const resolvedRoomId = await this.resolveRoomId(roomId);
     if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
