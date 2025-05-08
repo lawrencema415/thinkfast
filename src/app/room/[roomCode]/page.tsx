@@ -82,6 +82,7 @@ export default function RoomPage() {
 		totalRounds,
 		players,
 		hostId,
+		isPlaying,
 	} = initialState;
 
 	// Final check before rendering - if user somehow got past the useEffect checks
@@ -89,6 +90,10 @@ export default function RoomPage() {
 	if (!isUserInRoom) {
 		router.push('/');
 		return <LoadingScreen />;
+	}
+
+	if (isPlaying) {
+		return <div>Started!</div>;
 	}
 
 	return (
@@ -108,6 +113,7 @@ export default function RoomPage() {
 									timePerSong={timePerSong}
 									hostId={hostId}
 									userId={user.id}
+									songs={songs}
 								/>
 								<PlayerList
 									players={players || []}

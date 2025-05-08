@@ -18,6 +18,11 @@ type GameContextType = {
 	>;
 	joinRoomMutation: UseMutationResult<Room, Error, string>;
 	leaveRoomMutation: UseMutationResult<void, Error, string>;
+	startGameMutation: UseMutationResult<
+		GameState,
+		Error,
+		{ roomCode: string; songsPerPlayer: number; timePerSong: number }
+	>;
 	addSongMutation: UseMutationResult<
 		Song,
 		Error,
@@ -137,20 +142,55 @@ export function GameProvider({ children }: { children: ReactNode }) {
 		},
 	});
 
+	const startGameMutation = useMutation<
+		GameState,
+		Error,
+		{ roomCode: string; songsPerPlayer: number; timePerSong: number }
+	>({
+		mutationFn: async ({ roomCode, songsPerPlayer, timePerSong }) => {
+			const res = await apiRequest('POST', '/api/game/start', {
+				roomCode,
+				songsPerPlayer,
+				timePerSong,
+			});
+
+			if (!res.ok) {
+				const error = await res.json();
+				throw new Error(error.message || 'Failed to start game');
+			}
+
+			return await res.json(); // Make sure to return the GameState
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
+			// Optionally, show a toast or handle success
+		},
+		onError: (error: Error) => {
+			toast({
+				title: 'Failed to start game',
+				description: error.message,
+				variant: 'destructive',
+			});
+		},
+	});
+
 	const value: GameContextType = {
 		isLoading:
 			createRoomMutation.status === 'pending' ||
 			joinRoomMutation.status === 'pending' ||
 			leaveRoomMutation.status === 'pending' ||
+			startGameMutation.status === 'pending' ||
 			addSongMutation.status === 'pending',
 		error:
 			createRoomMutation.error ||
 			joinRoomMutation.error ||
 			leaveRoomMutation.error ||
+			startGameMutation.error ||
 			addSongMutation.error,
 		createRoomMutation,
 		joinRoomMutation,
 		leaveRoomMutation,
+		startGameMutation,
 		addSongMutation,
 	};
 

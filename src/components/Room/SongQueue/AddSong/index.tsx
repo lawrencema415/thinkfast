@@ -175,12 +175,12 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 						description: 'Your song has been added to the queue',
 					});
 					// Close modal
-					setIsOpen(false);
+					// setIsOpen(false);
 				},
 			}
 		);
 		// Close modal
-		setIsOpen(false);
+		// setIsOpen(false);
 	};
 
 	const renderThumbnail = (result: SpotifyTrack) => {

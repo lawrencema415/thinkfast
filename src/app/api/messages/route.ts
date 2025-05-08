@@ -3,6 +3,7 @@ import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { storage } from '../storage';
 import { broadcastGameState } from '@/lib/broadcast';
 
+// NOTE: Possibly improve chat functionality later with: https://upstash.com/blog/realtime-notifications
 export async function POST(req: Request) {
   try {
     // Verify authentication using our server-side auth helper

@@ -1,8 +1,9 @@
-import { Room } from '@shared/schema';
+import { Room, Song } from '@shared/schema';
 import { useToast } from '@/hooks/useToast';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import LeaveButton from './LeaveRoom';
 import { SettingsModal } from './SettingsModal';
+import StartGameButton from './StartGame';
 
 interface RoomInfoProps {
 	room: Room;
@@ -13,6 +14,7 @@ interface RoomInfoProps {
 	timePerSong: number;
 	userId: string;
 	hostId: string;
+	songs: Song[];
 }
 
 export function RoomInfo({
@@ -24,6 +26,7 @@ export function RoomInfo({
 	timePerSong,
 	userId,
 	hostId,
+	songs = [],
 }: RoomInfoProps) {
 	const { toast } = useToast();
 	const { code } = room;
@@ -38,6 +41,8 @@ export function RoomInfo({
 			});
 		}
 	};
+
+	const disableStart = !songs.length;
 
 	return (
 		<div className='bg-dark rounded-lg shadow-lg p-4 mb-6'>
@@ -100,6 +105,12 @@ export function RoomInfo({
 				</div>
 			</div>
 			<div className='mt-5 flex space-x-2'>
+				<StartGameButton
+					roomCode={code}
+					disabled={disableStart}
+					songsPerPlayer={songsPerPlayer}
+					timePerSong={timePerSong}
+				/>
 				<LeaveButton roomCode={code} />
 			</div>
 		</div>
