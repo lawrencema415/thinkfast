@@ -5,10 +5,8 @@ import { broadcastGameState } from '@/lib/broadcast';
 
 export async function PUT(req: Request) {
   try {
-    // Verify authentication
     const { user, response } = await verifyAuthInRouteHandler();
     
-    // If not authenticated, return the error response
     if (!user) {
       return response;
     }
@@ -16,19 +14,16 @@ export async function PUT(req: Request) {
     const body = await req.json();
     const { roomCode, songsPerPlayer, timePerSong } = body
 
-    // Get the room ID from the code
     const roomId = await storage.getRoomByCode(roomCode);
     if (!roomId) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    // Get the current game state
     const gameState = await storage.getGameStateByRoomCode(roomCode);
     if (!gameState) {
       return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
     }
 
-    // Verify the user is the host
     if (gameState.hostId !== user.id) {
       return NextResponse.json(
         { error: 'Only the host can update room settings' },
@@ -36,7 +31,6 @@ export async function PUT(req: Request) {
       );
     }
 
-    // Update the game state with new settings
     if (songsPerPlayer !== undefined) {
       gameState.songsPerPlayer = songsPerPlayer;
     }
@@ -45,7 +39,6 @@ export async function PUT(req: Request) {
       gameState.timePerSong = timePerSong;
     }
 
-    // Add a system message about the settings change
     const message = {
       id: crypto.randomUUID(),
       roomId: roomId,
@@ -58,10 +51,7 @@ export async function PUT(req: Request) {
     
     gameState.messages.push(message);
 
-    // Save the updated game state
     await storage.saveGameState(roomId, gameState);
-
-    // Broadcast the updated game state to all clients
     await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({

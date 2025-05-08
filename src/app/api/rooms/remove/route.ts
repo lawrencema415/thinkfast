@@ -25,7 +25,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
     }
 
-    // Verify the requesting user is the host
     if (gameState.hostId !== user.id) {
       return NextResponse.json({ error: 'Only the host can remove players' }, { status: 403 });
     }
