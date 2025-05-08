@@ -89,16 +89,16 @@ export function RoomInfo({
 					</span>
 				</div>
 			</div>
-			<div className='mt-5 flex justify-between'>
-			  {userId === hostId && (
-			    <SettingsModal 
-			      roomCode={code}
-			      currentSongsPerPlayer={songsPerPlayer}
-			      currentTimePerSong={timePerSong}
-			      isHost={true}
-			    />
-			  )}
-			  <LeaveButton roomCode={code} />
+			<div className='mt-5 flex space-x-2'>
+				{userId === hostId && (
+					<SettingsModal
+						roomCode={code}
+						currentSongsPerPlayer={songsPerPlayer}
+						currentTimePerSong={timePerSong}
+						isHost={true}
+					/>
+				)}
+				<LeaveButton roomCode={code} />
 			</div>
 		</div>
 	);
