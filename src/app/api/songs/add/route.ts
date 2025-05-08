@@ -27,6 +27,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
+    if (!storage.isUserInRoom(roomId, user.id)){
+      return NextResponse.json({ error: 'User is not in the room' }, { status: 403 });
+    }
+
     // Get the current game state
     const gameState = await storage.getGameStateByRoomCode(roomCode);
     if (!gameState) {

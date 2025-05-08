@@ -30,18 +30,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Only the host can remove players' }, { status: 403 });
     }
 
-    // Verify the player to be removed exists in the room
     const playerToRemove = gameState.players.find(p => p.user.id === playerId);
     if (!playerToRemove) {
       return NextResponse.json({ error: 'Player not found in room' }, { status: 404 });
     }
 
-    // Prevent host from removing themselves through this endpoint
-    if (playerId === user.id) {
-      return NextResponse.json({ error: 'Host cannot remove themselves. Use the leave endpoint instead.' }, { status: 400 });
+    if(!storage.isUserInRoom(roomId, playerId)){
+      return NextResponse.json({ error: 'Player not found in the room' }, { status: 403 });
     }
 
-    // Remove the player
+    if (playerId === user.id) {
+      return NextResponse.json({ error: 'Host cannot remove themselves.' }, { status: 400 });
+    }
+
     await storage.removePlayerFromRoom(roomCode, playerToRemove.user, 'kick');
     await broadcastGameState(roomCode, storage);
 
