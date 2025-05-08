@@ -27,7 +27,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    if (!storage.isUserInRoom(roomId, user.id)){
+    const isUserInRoom = await storage.isUserInRoom(roomId, user.id);
+    if (!isUserInRoom){
+
       return NextResponse.json({ error: 'User is not in the room' }, { status: 403 });
     }
 
