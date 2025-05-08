@@ -16,7 +16,7 @@ import { Search } from 'lucide-react';
 import Image from 'next/image';
 import { useGame } from '@/hooks/useGame';
 import { useToast } from '@/hooks/useToast';
-import { type SpotifyTrack, searchSpotifyTracks } from '@/lib/spotify';
+import { type SpotifyTrack } from '@/lib/spotify';
 import SearchPlatformSelector from './SearchPlatformSelector';
 import { createPortal } from 'react-dom';
 import MusicPlayer from './MusicPlayer';
@@ -95,15 +95,13 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 		setIsSearching(true);
 		try {
 			if (sourceType === 'spotify') {
-				const tracks = await searchSpotifyTracks(searchQuery);
-				const ids = tracks.map((track) => track.id);
 				const previewResponse = await fetch(`/api/spotify/previews`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ ids }),
+					body: JSON.stringify({ query: searchQuery }),
 				});
 				const { enrichedTracks } = await previewResponse.json();
-				setSearchResults(tracks);
+				setSearchResults(enrichedTracks);
 				setSearchPreviewResults(enrichedTracks);
 			}
 		} catch (error) {
