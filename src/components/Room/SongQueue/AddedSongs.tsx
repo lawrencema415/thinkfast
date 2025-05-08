@@ -44,10 +44,6 @@ export function AddedSongs({ songQueue, roomCode, userId }: AddedSongsProps) {
 
 	return (
 		<div className='bg-dark rounded-lg shadow-lg overflow-hidden mb-6'>
-			<div className='p-4 bg-gray-800 border-b border-gray-700'>
-				<h2 className='font-heading text-lg font-semibold'>Your Added Songs</h2>
-			</div>
-
 			<div className='p-4 space-y-3'>
 				{userSongs.map((song, index) => (
 					<div
@@ -90,7 +86,7 @@ export function AddedSongs({ songQueue, roomCode, userId }: AddedSongsProps) {
 
 				{userSongs.length === 0 && (
 					<div className='text-center py-4 text-gray-400'>
-						You have not added any songs yet.
+						No songs in queue. Add songs to get started!
 					</div>
 				)}
 			</div>
