@@ -12,9 +12,9 @@ interface HintProps {
 
 const INITIAL_BLUR = 100;
 const MIN_BLUR = 0;
-const INITIAL_CONTRAST = 0.5;
+const INITIAL_CONTRAST = 0.4;
 const MAX_CONTRAST = 1;
-const INITIAL_BRIGHTNESS = 0.5;
+const INITIAL_BRIGHTNESS = 0.4;
 const MAX_BRIGHTNESS = 1;
 
 export function Hint({
@@ -46,20 +46,20 @@ export function Hint({
         const newBrightness = INITIAL_BRIGHTNESS + (progressPercent / 100) * (MAX_BRIGHTNESS - INITIAL_BRIGHTNESS);
         setBrightness(newBrightness);
 
-        if (progress > 90) {
-            setShowSongName('hello');
-            setShowArtistName('hello');
+        if (progress > 100) {
+            setShowSongName(currentTrack?.title || '???');
+            setShowArtistName(currentTrack?.artist || '???');
+        } 
+    }, [trackRunTime, timePerSong, progressPercent, currentTrack]);
+
+
+    // on currentTrack change, reset hint
+    useEffect(() => {
+        if (currentTrack) {
+            setShowSongName('???');
+            setShowArtistName('???');
         }
-    }, [trackRunTime, timePerSong, progressPercent]);
-
-    // console.log(progressPercent);
-
-    // useEffect(() => {
-    //     if (progressPercent === 100) {
-    //         setShowSongName('Hello');
-    //         setShowArtistName('Hello');
-    //     }
-    // }, [progressPercent]);
+    }, [currentTrack]);
 
     return (
         <div>

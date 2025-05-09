@@ -34,17 +34,17 @@ export function GamePlayer({
     const [startedAtTime, setStartedAtTime] = useState(() => 
         currentTrackStartedAt instanceof Date 
             ? currentTrackStartedAt.getTime() 
-            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current
+            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : null
     );
     
     // Update startedAtTime when currentTrackStartedAt changes
     useEffect(() => {
         const newStartedAtTime = currentTrackStartedAt instanceof Date 
             ? currentTrackStartedAt.getTime() 
-            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current;
+            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : null;
         
         setStartedAtTime(newStartedAtTime);
-    }, [currentTrackStartedAt]);
+    }, [currentTrackStartedAt, currentTrack]);
     
     const [trackRunTime, setTrackRunTime] = useState(0);
     
@@ -52,17 +52,20 @@ export function GamePlayer({
     const [trackStartTime, setTrackStartTime] = useState(0);
     
     useEffect(() => {
-        setTrackStartTime(Math.max(0, joinTimeRef.current - startedAtTime));
-    }, [startedAtTime]);
+        if (startedAtTime){
+            setTrackStartTime(Math.max(0, joinTimeRef.current - startedAtTime));
+        }
+    }, [startedAtTime, currentTrack]);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            const now = new Date().getTime();
-            // Ensure trackRunTime is never negative and starts from 0
-            setTrackRunTime(Math.max(0, now - startedAtTime));
+            if(startedAtTime){
+                const now = new Date().getTime();
+                setTrackRunTime(Math.max(0, now - startedAtTime));
+            }
         }, 10);
         return () => clearInterval(interval);
-    }, [startedAtTime]); // Add startedAtTime as dependency
+    }, [startedAtTime, currentTrack]);
 
     useEffect(() => {
         const audio = audioRef.current;
