@@ -6,10 +6,19 @@ const nextConfig: NextConfig = {
 
   images: {
     // explicitly allow the domain (i.scdn.co)
-    domains: [
-      'i.scdn.co',
-      'images.unsplash.com',
-      'cdn.example.com',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.example.com',
+      },
     ],
   },
   webpack: (config, { isServer }) => {
