@@ -28,24 +28,41 @@ export function GamePlayer({
 }: GamePlayerProps) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const volume = getLocalStorage(LOCALSTORAGE_KEYS.VOLUME, 0.5);
-    // const [currentTime, setCurrentTime] = useState(new Date().getTime());
-    const [trackRunTime, setTrackRunTime] = useState(new Date().getTime());
-    const joinTimeRef = useRef(new Date().getTime()); // When user joins room
-    const startedAtTime = currentTrackStartedAt instanceof Date 
-        ? currentTrackStartedAt.getTime() 
-        : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current;
+    const joinTimeRef = useRef(new Date().getTime());
+    
+    // Use state instead of ref for startedAtTime
+    const [startedAtTime, setStartedAtTime] = useState(() => 
+        currentTrackStartedAt instanceof Date 
+            ? currentTrackStartedAt.getTime() 
+            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current
+    );
+    
+    // Update startedAtTime when currentTrackStartedAt changes
+    useEffect(() => {
+        const newStartedAtTime = currentTrackStartedAt instanceof Date 
+            ? currentTrackStartedAt.getTime() 
+            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current;
+        
+        setStartedAtTime(newStartedAtTime);
+    }, [currentTrackStartedAt]);
+    
+    const [trackRunTime, setTrackRunTime] = useState(0);
+    
+    // Calculate track start offset when startedAtTime changes
+    const [trackStartTime, setTrackStartTime] = useState(0);
+    
+    useEffect(() => {
+        setTrackStartTime(Math.max(0, joinTimeRef.current - startedAtTime));
+    }, [startedAtTime]);
 
-    // sync up client audio that join in the middle of round
-    const trackStartTime = useRef(joinTimeRef.current - startedAtTime)
-
-    useEffect(()=> {
+    useEffect(() => {
         const interval = setInterval(() => {
             const now = new Date().getTime();
-            setTrackRunTime(now - startedAtTime);
-            // setCurrentTime(new Date().getTime());
+            // Ensure trackRunTime is never negative and starts from 0
+            setTrackRunTime(Math.max(0, now - startedAtTime));
         }, 10);
         return () => clearInterval(interval);
-    }, [startedAtTime]);
+    }, [startedAtTime]); // Add startedAtTime as dependency
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -58,24 +75,17 @@ export function GamePlayer({
             if (currentTrack?.previewUrl) {
                 // song will play the last timePerSong seconds
                 // backend route can add intermission delay to game round
-                audio.currentTime = Math.max(0, audio.duration - timePerSong + trackStartTime.current / 1000);
+                audio.currentTime = Math.max(0, audio.duration - timePerSong + trackStartTime / 1000);
                 audio.play();
             }
         };
     
         audio.addEventListener('loadedmetadata', handleLoadedMetadata);
         
-        // commented function starts song at duration 0:00
-        // if (currentTrack?.previewUrl && audioRef.current) {
-        //     audio.src = currentTrack.previewUrl;
-        //     audio.currentTime = trackStartTime.current / 1000;
-        //     audio.play();
-        // }
-
         return () => {
             audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
         };
-    }, [currentTrack?.previewUrl, isPlaying, timePerSong]);
+    }, [currentTrack?.previewUrl, isPlaying, timePerSong, trackStartTime]);
     
     useEffect(() => {
         const audio = audioRef.current;
