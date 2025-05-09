@@ -277,7 +277,7 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 									</div>
 								</div>
 
-								{searchResults.length > 0 && (
+								{searchResults?.length > 0 && (
 									<div className='bg-gray-800 rounded-lg p-3'>
 										<h4 className='font-medium mb-2'>Search Results</h4>
 										<div className='max-h-60 overflow-y-auto space-y-2'>

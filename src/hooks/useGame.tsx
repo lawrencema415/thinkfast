@@ -158,11 +158,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
 				throw new Error(error.message || 'Failed to start game');
 			}
 
-			return await res.json(); // Make sure to return the GameState
+			return await res.json();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
-			// Optionally, show a toast or handle success
 		},
 		onError: (error: Error) => {
 			toast({

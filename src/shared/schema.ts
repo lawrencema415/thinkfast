@@ -66,23 +66,43 @@ export const systemMessageSchema = z.object({
   createdAt: z.string().transform(val => new Date(val))
 });
 
+const roundSchema = z.object({
+  roundNumber: z.number(),
+  song: songSchema,
+  startedAt: z.date(),
+  endedAt: z.date().optional(),
+  guesses: z.array(
+    z.object({
+      userId: z.string(),
+      guess: z.string(),
+      timestamp: z.date(),
+      isCorrect: z.boolean(),
+    })
+  ),
+  winnerId: z.string().nullable(),
+});
+
 // GameState model
 export const gameStateSchema = z.object({
   id: z.string(),
-  createdAt: z.string().transform(val => new Date(val)),
+  createdAt: z.date(),
   currentRound: z.number(),
   currentTrack: songSchema.nullable(),
+  currentTrackStartedAt: z.date().nullable(), // <-- NEW
   hostId: z.string(),
   isActive: z.boolean(),
   isPlaying: z.boolean(),
-  messages: z.array(z.union([messageSchema, systemMessageSchema])),
+  messages: z.array(messageSchema),
   players: z.array(playerSchema),
   room: roomSchema,
   songs: z.array(songSchema),
+  playedSongIds: z.array(z.string()), // <-- NEW
+  rounds: z.array(roundSchema), // <-- NEW
   songsPerPlayer: z.number(),
   timePerSong: z.number(),
   timeRemaining: z.number(),
   totalRounds: z.number(),
+  countDown: z.boolean().default(false),
 });
 
 export const updateGameSchema = z.object({

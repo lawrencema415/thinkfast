@@ -4,8 +4,6 @@ import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { broadcastGameState } from '@/lib/broadcast';
 import { Player } from '@/shared/schema';
 
-const IS_PLAYING = false;
-
 export async function POST(req: Request) {
   const { user, response } = await verifyAuthInRouteHandler();
   if (!user) return response;
@@ -13,7 +11,6 @@ export async function POST(req: Request) {
   const { roomCode, songsPerPlayer, timePerSong } = body;
 
   const gameState = await storage.getGameStateByRoomCode(roomCode);
-
   const roomId = await storage.getRoomByCode(roomCode);
 
   if (!roomId) {
@@ -33,17 +30,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Game already started' }, { status: 400 });
   }
 
-  // Activate room and set game settings
-  gameState.isPlaying = IS_PLAYING;
-  gameState.songsPerPlayer = songsPerPlayer;
-  gameState.timePerSong = timePerSong;
+  // Set game settings
+  if (typeof songsPerPlayer === 'number') gameState.songsPerPlayer = songsPerPlayer;
+  if (typeof timePerSong === 'number') gameState.timePerSong = timePerSong;
 
+  gameState.countDown = true;
+  await storage.saveGameState(roomId, gameState);
+  await broadcastGameState(roomCode, storage);
   
-  // TODO: Clean up saveGameState to use roomCode and convert to roomId
-  // make it more consistent with the rest of the codebase
+  // Wait 3 seconds, then set countDown to false and isPlaying to true
+  setTimeout(async () => {
+    const updatedGameState = await storage.getGameStateByRoomCode(roomCode);
+    if (updatedGameState) {
+      updatedGameState.countDown = false;
+      updatedGameState.isPlaying = true;
+      await storage.saveGameState(roomId, updatedGameState);
+      await broadcastGameState(roomCode, storage);
+    }
+  }, 3000);
+
   await storage.saveGameState(roomId, gameState);
   await storage.shuffleSongsInRoom(roomCode);
-  
   await broadcastGameState(roomCode, storage);
 
   return NextResponse.json(gameState.room);

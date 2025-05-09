@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { Player, Song } from '@shared/schema';
-import { Music2, Volume2, VolumeX } from 'lucide-react';
+import { Music2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Slider } from '@/components/ui/slider';
 import ReactPlayer from 'react-player';
 import Image from 'next/image';
 
@@ -20,7 +18,6 @@ interface MusicPlayerProps {
 // FIXME: Update according to schema
 export function MusicPlayer({
 	currentTrack,
-	submitter,
 	currentRound,
 	totalRounds,
 	isPlaying,
@@ -32,11 +29,6 @@ export function MusicPlayer({
 		// Get volume from localStorage or default to 0.6 (60%)
 		const savedVolume = localStorage.getItem('musicPlayerVolume');
 		return savedVolume ? parseFloat(savedVolume) : 0.6;
-	});
-	const [isMuted, setIsMuted] = useState(() => {
-		// Get mute state from localStorage or default to false
-		const savedMute = localStorage.getItem('musicPlayerMuted');
-		return savedMute ? JSON.parse(savedMute) : false;
 	});
 
 	// Add ref to store the original volume
@@ -213,49 +205,6 @@ export function MusicPlayer({
 		}
 	}, [timeRemaining]);
 
-	// Handle volume changes
-	const handleVolumeChange = (value: number[]) => {
-		const newVolume = value[0];
-		setVolume(newVolume);
-		localStorage.setItem('musicPlayerVolume', newVolume.toString());
-
-		if (audioRef.current) {
-			audioRef.current.volume = newVolume;
-		}
-		if (playerRef.current) {
-			playerRef.current.getInternalPlayer()?.setVolume(newVolume * 100);
-		}
-	};
-
-	// Handle mute toggle
-	const toggleMute = () => {
-		const newMutedState = !isMuted;
-		setIsMuted(newMutedState);
-		localStorage.setItem('musicPlayerMuted', JSON.stringify(newMutedState));
-
-		if (audioRef.current) {
-			audioRef.current.muted = newMutedState;
-		}
-		if (playerRef.current) {
-			playerRef.current
-				.getInternalPlayer()
-				?.setVolume(newMutedState ? 0 : volume * 100);
-		}
-	};
-
-	// Initialize volume and mute state on component mount
-	useEffect(() => {
-		if (audioRef.current) {
-			audioRef.current.volume = volume;
-			audioRef.current.muted = isMuted;
-		}
-		if (playerRef.current) {
-			playerRef.current
-				.getInternalPlayer()
-				?.setVolume(isMuted ? 0 : volume * 100);
-		}
-	}, [isMuted, volume]);
-
 	if (!currentTrack) {
 		return (
 			<div className='bg-gray-800 rounded-lg p-6 text-center mb-5'>
@@ -302,32 +251,7 @@ export function MusicPlayer({
 				<p className='text-sm text-gray-400'>
 					{timeRemaining} seconds remaining
 				</p>
-
-				{/* Volume Controls */}
-				<div className='flex items-center gap-2 w-full mt-4'>
-					<Button
-						variant='ghost'
-						size='icon'
-						onClick={toggleMute}
-						className='text-gray-400 hover:text-white'
-					>
-						{isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-					</Button>
-					<Slider
-						value={[volume]}
-						onValueChange={handleVolumeChange}
-						max={1}
-						step={0.1}
-						className='w-full'
-					/>
-				</div>
 			</div>
-
-			{submitter && (
-				<p className='text-center text-sm text-gray-400'>
-					Song submitted by {submitter.user.user_metadata.display_name}
-				</p>
-			)}
 
 			{/* Hidden player for actual song playback */}
 			{/* {currentTrack && (

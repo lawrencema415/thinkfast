@@ -16,10 +16,12 @@ import { NavigationBar } from '@/components/NavigationBar';
 import { isEmpty } from 'lodash';
 import { ChatBox } from '@/components/Room/ChatBox';
 import { useAxiosErrorHandler } from '@/hooks/useAxiosErrorHandler';
+import { CountdownOverlay } from '@/components/Room/CountdownOverlay';
 
 // FIXME: Update according to schema
 export default function RoomPage() {
 	const [initialState, setInitialState] = useState<GameState | null>(null);
+	const [countdown, setCountdown] = useState<number | null>(null);
 	const params = useParams();
 	const router = useRouter();
 	const roomCode = params.roomCode as string;
@@ -47,6 +49,23 @@ export default function RoomPage() {
 
 		init();
 	}, [handleError, roomCode, router, toast, user, gameState]);
+
+	// Countdown effect
+	useEffect(() => {
+		if (gameState?.countDown) {
+			setCountdown(3);
+			const timer1 = setTimeout(() => setCountdown(2), 1000);
+			const timer2 = setTimeout(() => setCountdown(1), 2000);
+			const timer3 = setTimeout(() => setCountdown(null), 3000);
+			return () => {
+				clearTimeout(timer1);
+				clearTimeout(timer2);
+				clearTimeout(timer3);
+			};
+		} else {
+			setCountdown(null);
+		}
+	}, [gameState?.countDown]);
 
 	if (loading || isEmpty(initialState) || !user) {
 		return <LoadingScreen />;
@@ -97,6 +116,7 @@ export default function RoomPage() {
 	return (
 		<div className='min-h-screen flex flex-col'>
 			<NavigationBar />
+			{countdown !== null && <CountdownOverlay countdown={countdown} />}
 			<main className='flex-1 container mx-auto px-4 py-6'>
 				<div className='flex flex-col lg:flex-row gap-6'>
 					<div className='lg:w-1/4'>
