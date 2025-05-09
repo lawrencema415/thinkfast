@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Pause, Play, Volume2, VolumeX, Pencil } from 'lucide-react';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
+import {
+	getLocalStorage,
+	LOCALSTORAGE_KEYS,
+	setLocalStorage,
+} from '@/lib/localStorage';
 
 export function formatTime(seconds: number) {
 	const m = Math.floor(seconds / 60)
@@ -32,12 +37,13 @@ export default function MusicPlayer({
 	customTitle,
 	setCustomTitle,
 }: MusicPlayerProps) {
-	const progressRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [currentTime, setCurrentTime] = useState(0);
 	const [duration, setDuration] = useState(30);
-	const [volume, setVolume] = useState(0.5);
+	const [volume, setVolume] = useState(() =>
+		getLocalStorage<number>(LOCALSTORAGE_KEYS.VOLUME, 0.5)
+	);
 	const [isMuted, setIsMuted] = useState(false);
 	const [showVolume, setShowVolume] = useState(false);
 	const [showTooltip, setShowTooltip] = useState(false);
@@ -65,12 +71,13 @@ export default function MusicPlayer({
 		}
 	}, [previewUrl, audioRef]);
 
-	// Sync volume and mute
 	useEffect(() => {
 		const audio = audioRef.current;
-		if (!audio) return;
-		audio.volume = volume;
-		audio.muted = isMuted;
+		if (audio) {
+			audio.volume = volume;
+			audio.muted = isMuted;
+		}
+		setLocalStorage(LOCALSTORAGE_KEYS.VOLUME, volume);
 	}, [volume, isMuted, audioRef]);
 
 	// Listen for time updates and play/pause events
@@ -110,17 +117,6 @@ export default function MusicPlayer({
 		} else {
 			audio.pause();
 		}
-	};
-
-	const handleProgressClick = (e: React.MouseEvent) => {
-		const audio = audioRef.current;
-		const progressBar = progressRef.current;
-		if (!audio || !progressBar) return;
-		const rect = progressBar.getBoundingClientRect();
-		const clickX = e.clientX - rect.left;
-		const newTime = (clickX / rect.width) * duration;
-		audio.currentTime = newTime;
-		setCurrentTime(newTime);
 	};
 
 	const toggleMute = () => {
@@ -169,16 +165,27 @@ export default function MusicPlayer({
 						</div>
 					)}
 				</div>
-				<div
-					ref={progressRef}
-					className='relative h-2 w-full cursor-pointer rounded bg-gray-700'
-					onClick={handleProgressClick}
-				>
-					<div
-						className='absolute left-0 top-0 h-2 rounded bg-blue-500'
-						style={{ width: `${(currentTime / duration) * 100}%` }}
-					/>
-				</div>
+				<input
+					type='range'
+					min={0}
+					max={duration}
+					step={0.01}
+					value={currentTime}
+					onChange={(e) => {
+						const audio = audioRef.current;
+						const newTime = parseFloat(e.target.value);
+						if (audio) {
+							audio.currentTime = newTime;
+						}
+						setCurrentTime(newTime);
+					}}
+					className='w-full h-2 accent-purple-400 cursor-pointer'
+					aria-label='Progress'
+					style={{
+						// Optional: make the track thicker and rounder
+						accentColor: '#a78bfa', // your primary purple
+					}}
+				/>
 				<div className='flex items-center justify-between text-xs text-gray-400'>
 					<span>{formatTime(currentTime)}</span>
 					<span>{formatTime(duration)}</span>
@@ -225,7 +232,7 @@ export default function MusicPlayer({
 								step={0.01}
 								value={volume}
 								onChange={(e) => setVolume(parseFloat(e.target.value))}
-								className='w-full accent-blue-500'
+								className='w-full accent-[#a78bfa]'
 								aria-label='Volume'
 							/>
 						</div>

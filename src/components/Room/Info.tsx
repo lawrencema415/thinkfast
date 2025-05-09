@@ -16,6 +16,7 @@ interface RoomInfoProps {
 	userId: string;
 	hostId: string;
 	songs: Song[];
+	isPlaying?: boolean;
 }
 
 export function RoomInfo({
@@ -28,6 +29,7 @@ export function RoomInfo({
 	userId,
 	hostId,
 	songs = [],
+	isPlaying = false,
 }: RoomInfoProps) {
 	const { toast } = useToast();
 	const { code } = room;
@@ -90,9 +92,11 @@ export function RoomInfo({
 				</div>
 				<div className='flex justify-between'>
 					<span className='text-gray-300'>Round:</span>
-					<span className='font-medium'>
-						{currentRound}/{totalRounds}
-					</span>
+					{isPlaying && (
+						<span className='font-medium'>
+							{currentRound}/{totalRounds}
+						</span>
+					)}
 				</div>
 				<div className='flex justify-between'>
 					<span className='text-gray-300'>Songs Per Player:</span>
