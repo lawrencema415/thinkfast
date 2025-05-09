@@ -10,14 +10,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import { RoomInfo } from '@/components/Room/Info';
 import { PlayerList } from '@/components/Room/PlayerList';
-import { MusicPlayer } from '@/components/Room/MusicPlayer';
+// import { MusicPlayer } from '@/components/Room/MusicPlayer';
 import { SongQueue } from '@/components/Room/SongQueue';
 import { NavigationBar } from '@/components/NavigationBar';
 import { isEmpty } from 'lodash';
 import { ChatBox } from '@/components/Room/ChatBox';
 import { useAxiosErrorHandler } from '@/hooks/useAxiosErrorHandler';
 import { CountdownOverlay } from '@/components/Room/CountdownOverlay';
-
+import { GamePlayer } from '@/components/Room/GamePlayer';
 // FIXME: Update according to schema
 export default function RoomPage() {
 	const [initialState, setInitialState] = useState<GameState | null>(null);
@@ -110,7 +110,7 @@ export default function RoomPage() {
 		return (
 			<div>
 				{countdown !== null && <CountdownOverlay countdown={countdown} />}
-				<MusicPlayer
+				<GamePlayer
 					currentTrack={currentTrack}
 					currentRound={currentRound}
 					totalRounds={totalRounds}
@@ -168,7 +168,7 @@ export default function RoomPage() {
 						)}
 					</div>
 					<div className='lg:w-2/4'>
-						<MusicPlayer
+						<GamePlayer
 							currentTrack={currentTrack}
 							currentRound={0}
 							totalRounds={0}
