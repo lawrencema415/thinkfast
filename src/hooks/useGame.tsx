@@ -52,18 +52,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
 			});
 			return await res.json();
 		},
-		onSuccess: (gameState: GameState) => {
+		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
-			toast({
-				title: 'Room created',
-				description: `Room code: ${gameState.room.code}`,
-			});
 		},
 		onError: (error: Error) => {
 			toast({
 				title: 'Failed to create room',
 				description: error.message,
 				variant: 'destructive',
+				duration: 5000,
 			});
 		},
 	});
@@ -86,6 +83,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 				title: 'Failed to join room',
 				description: error.message,
 				variant: 'destructive',
+				duration: 5000,
 			});
 		},
 	});
@@ -107,6 +105,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 			toast({
 				title: 'Left room',
 				description: 'You have left the game room',
+				duration: 2000,
 			});
 			router.push('/');
 		},
@@ -170,6 +169,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 				title: 'Failed to start game',
 				description: error.message,
 				variant: 'destructive',
+				duration: 5000,
 			});
 		},
 	});

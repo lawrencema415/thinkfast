@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Clock } from 'lucide-react';
 import { useGame } from '@/hooks/useGame';
 import { useRouter } from 'next/navigation';
@@ -56,6 +56,20 @@ export function ReadyToPlayModal({
 			},
 		});
 	};
+
+	// auto fill room code from clipboard
+	useEffect(() => {
+		if (!isOpen) return;
+		if (activeTab !== 'join') return;
+		navigator.clipboard
+			.readText()
+			.then((text) => {
+				if (text && /^[A-Z0-9]{4,}$/.test(text.trim())) {
+					setRoomCode(text.trim().toUpperCase());
+				}
+			})
+			.catch(() => {});
+	}, [isOpen, activeTab]);
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>
