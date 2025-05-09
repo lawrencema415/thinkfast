@@ -103,14 +103,14 @@ export default function RoomPage() {
 		return <LoadingScreen />;
 	}
 
-	const timeLeft = () => {
-		const now = new Date();
-		const startedAt = currentTrackStartedAt
-			? new Date(currentTrackStartedAt)
-			: null;
-		const timeRemaining = startedAt ? now.getTime() - startedAt.getTime() : 0;
-		return timePerSong - timeRemaining;
-	};
+	// const timeLeft = () => {
+	// 	const now = new Date();
+	// 	const startedAt = currentTrackStartedAt
+	// 		? new Date(currentTrackStartedAt)
+	// 		: null;
+	// 	const timeRemaining = startedAt ? now.getTime() - startedAt.getTime() : 0;
+	// 	return timePerSong - timeRemaining;
+	// };
 
 	if (isPlaying) {
 		return (
@@ -121,10 +121,7 @@ export default function RoomPage() {
 					currentRound={currentRound}
 					totalRounds={totalRounds}
 					isPlaying={false}
-					timeRemaining={timeLeft()}
-					onPlayPause={function (): void {
-						throw new Error('Function not implemented.');
-					}}
+					currentTrackStartedAt={currentTrackStartedAt}
 				/>
 			</div>
 		);
@@ -179,10 +176,7 @@ export default function RoomPage() {
 							currentRound={0}
 							totalRounds={0}
 							isPlaying={false}
-							timeRemaining={0}
-							onPlayPause={function (): void {
-								throw new Error('Function not implemented.');
-							}}
+							currentTrackStartedAt={currentTrackStartedAt}
 						/>
 						<ChatBox
 							messages={initialMessages || []}
