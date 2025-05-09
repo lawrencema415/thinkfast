@@ -4,6 +4,8 @@ import { Music2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import ReactPlayer from 'react-player';
 import Image from 'next/image';
+// import { Pause, Play, Volume2, VolumeX, Pencil } from 'lucide-react';
+// import { formatTime } from './SongQueue/AddSong/MusicPlayer';
 
 interface MusicPlayerProps {
 	currentTrack: Song | null;
@@ -41,6 +43,23 @@ export function MusicPlayer({
 	const artistRevealedPositionsRef = useRef<number[]>([]);
 	const lastTitleLengthRef = useRef<number>(0);
 	const lastArtistLengthRef = useRef<number>(0);
+
+	useEffect(() => {
+		const audio = audioRef.current;
+		if (!audio) return;
+		audio.pause();
+		audio.src = currentTrack?.previewUrl || '';
+		audio.load();
+		
+		if (currentTrack?.previewUrl && audioRef.current) {
+			audioRef.current.src = currentTrack.previewUrl;
+			audioRef.current.currentTime = 0;
+			audioRef.current.play();
+
+		}
+	}, [currentTrack?.previewUrl, audioRef]);
+
+	
 
 	// // Create audio element only once
 	// useEffect(() => {
@@ -251,31 +270,6 @@ export function MusicPlayer({
 					{timeRemaining} seconds remaining
 				</p>
 			</div>
-
-			{/* Hidden player for actual song playback */}
-			{/* {currentTrack && (
-				<div style={{ display: 'none' }}>
-					<ReactPlayer
-						ref={playerRef}
-						url={`https://www.youtube.com/watch?v=${currentTrack.sourceId}`}
-						playing={isPlaying}
-						width='0%'
-						height='0%'
-						config={{
-							youtube: {
-								playerVars: {
-									start: 30, // Start at 30 seconds
-									end: 40, // Play for 10 seconds
-									controls: 0,
-									disablekb: 1,
-									fs: 0,
-									modestbranding: 1,
-								},
-							},
-						}}
-					/>
-				</div>
-			)} */}
 		</div>
 	);
 }
