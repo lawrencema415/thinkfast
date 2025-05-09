@@ -31,7 +31,7 @@ export function GameCompletedModal({
 		const results = `ThinkFast Results:\n${sortedPlayers
 			.map(
 				(p, i) =>
-					`${i + 1}. ${p.user.user_metadata.display_name}: ${
+					`${i + 1}. ${p.user.user_metadata?.display_name}: ${
 						p.score || 0
 					} points`
 			)
@@ -62,60 +62,64 @@ export function GameCompletedModal({
 				</DialogHeader>
 
 				<div className='mt-6 space-y-4'>
-					{sortedPlayers.map((player, index) => (
-						<div
-							key={player.user.id}
-							className={`flex items-center p-4 rounded-lg transition-colors ${
-								index === 0
-									? 'bg-primary/15 border border-primary/30'
-									: 'bg-muted/50 hover:bg-muted/70'
-							}`}
-						>
-							{/* Position indicator */}
+					{sortedPlayers.map((player, index) => {
+						const displayName =
+							player.user.user_metadata?.display_name || 'Unknown Player';
+						// const avatarUrl = player.user.user_metadata?.avatarUrl;
+						return (
 							<div
-								className={`w-8 h-8 flex items-center justify-center rounded-full mr-3 ${
+								key={player.user.id}
+								className={`flex items-center p-4 rounded-lg transition-colors ${
 									index === 0
-										? 'bg-primary text-primary-foreground'
-										: 'bg-muted-foreground/20 text-muted-foreground'
+										? 'bg-primary/15 border border-primary/30'
+										: 'bg-muted/50 hover:bg-muted/70'
 								}`}
 							>
-								{index === 0 ? (
-									<Trophy className='h-4 w-4' />
-								) : (
-									<span className='font-medium text-sm'>{index + 1}</span>
-								)}
-							</div>
-
-							{/* Player info */}
-							<div className='flex items-center flex-1 min-w-0'>
-								<Avatar className='h-8 w-8 mr-3 ring-2 ring-border'>
-									<AvatarFallback
-										className={getUserColor(
-											player.user.user_metadata.display_name
-										)}
-									>
-										{getInitials(player.user.user_metadata.display_name)}
-									</AvatarFallback>
-								</Avatar>
-								<div className='truncate'>
-									<p className='font-medium truncate'>
-										{player.user.user_metadata.display_name}
-									</p>
-								</div>
-							</div>
-
-							{/* Score */}
-							<div className='ml-4'>
-								<span
-									className={`text-xl font-bold font-mono ${
-										index === 0 ? 'text-primary' : 'text-muted-foreground'
+								{/* Position indicator */}
+								<div
+									className={`w-8 h-8 flex items-center justify-center rounded-full mr-3 ${
+										index === 0
+											? 'bg-primary text-primary-foreground'
+											: 'bg-muted-foreground/20 text-muted-foreground'
 									}`}
 								>
-									{player.score || 0}
-								</span>
+									{index === 0 ? (
+										<Trophy className='h-4 w-4' />
+									) : (
+										<span className='font-medium text-sm'>{index + 1}</span>
+									)}
+								</div>
+
+								{/* Player info */}
+								<div className='flex items-center flex-1 min-w-0'>
+									<Avatar className='h-8 w-8 mr-3 ring-2 ring-border'>
+										<AvatarFallback
+											className={getUserColor(
+												player.user.user_metadata?.display_name ||
+													'Unknown Player'
+											)}
+										>
+											{getInitials(displayName)}
+										</AvatarFallback>
+									</Avatar>
+									<div className='truncate'>
+										<p className='font-medium truncate'>{displayName}</p>
+									</div>
+								</div>
+
+								{/* Score */}
+								<div className='ml-4'>
+									<span
+										className={`text-xl font-bold font-mono ${
+											index === 0 ? 'text-primary' : 'text-muted-foreground'
+										}`}
+									>
+										{player.score || 0}
+									</span>
+								</div>
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 
 				<DialogFooter className='flex flex-col sm:flex-row gap-2 mt-6'>
