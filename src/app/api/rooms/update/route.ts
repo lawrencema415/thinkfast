@@ -40,6 +40,8 @@ export async function PUT(req: Request) {
       gameState.timePerSong = timePerSong;
     }
 
+    const messages = await storage.getMessagesByRoomCode(roomCode);
+
     const message = {
       id: crypto.randomUUID(),
       roomId: roomId,
@@ -50,9 +52,10 @@ export async function PUT(req: Request) {
       createdAt: new Date()
     };
     
-    gameState.messages.push(message);
+    messages.push(message);
 
     await storage.saveGameState(roomId, gameState);
+    await storage.saveMessagesState(roomId, messages);
     await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({
