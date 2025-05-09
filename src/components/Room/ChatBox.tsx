@@ -45,8 +45,6 @@ const MessageRow = function MessageRow({
 		);
 	}
 
-	console.log('player', player);
-
 	let displayName = 'Unknown User';
 	let avatarUrl = '';
 	if (player?.user?.user_metadata) {
@@ -189,7 +187,6 @@ export function ChatBox({
 					placeholder={isGuessing ? 'Type your guess...' : 'Type a message...'}
 					className='flex-1'
 					autoComplete='off'
-					disabled={isSending}
 				/>
 				<Button type='submit' disabled={!message.trim() || isSending}>
 					<Send className='h-4 w-4' />

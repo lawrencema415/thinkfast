@@ -28,7 +28,7 @@ export function useBatchSendMessages(
       timerRef.current = setTimeout(async () => {
         await flush();
         timerRef.current = null;
-      }, 500);
+      }, 200);
     }
   }, [flush]);
 
