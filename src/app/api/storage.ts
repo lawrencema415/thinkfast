@@ -96,19 +96,14 @@ export class RedisStorage {
       totalRounds: 0,
     };
 
+    await redis.pipeline()
     // Set game state
-    await redis.set(`gameState:${id}`, JSON.stringify(gameState)); // Ensure the game state is stringified
+    .set(`gameState:${id}`, JSON.stringify(gameState))
     // For room code look up
-    await redis.set(`roomCode:${room.code}`, room.id);
-    return gameState;
-  }
+    .set(`roomCode:${room.code}`, room.id).exec();
 
-  // not used
-  // async getRoom(roomId: string): Promise<Room | null> {
-  //   const key = `room:${roomId}`;
-  //   return await redis.get<Room>(key);
-  // }
-  
+    return gameState;
+  }  
 
   async getRoomByCode(code: string): Promise<string | null> {
     return await redis.get<string>(`roomCode:${code}`)
