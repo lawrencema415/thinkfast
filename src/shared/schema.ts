@@ -90,18 +90,18 @@ export const gameStateSchema = z.object({
   createdAt: z.date(),
   currentRound: z.number(),
   currentTrack: songSchema.nullable(),
-  currentTrackStartedAt: z.date().nullable(), // <-- NEW
+  currentTrackStartedAt: z.date().nullable(),
+  currentTrackHint: z.string(),
   hostId: z.string(),
   isActive: z.boolean(),
   isPlaying: z.boolean(),
   players: z.array(playerSchema),
   room: roomSchema,
   songs: z.array(songSchema),
-  playedSongIds: z.array(z.string()), // <-- NEW
-  rounds: z.array(roundSchema), // <-- NEW
+  playedSongIds: z.array(z.string()), 
+  rounds: z.array(roundSchema), 
   songsPerPlayer: z.number(),
   timePerSong: z.number(),
-  timeRemaining: z.number(),
   totalRounds: z.number(),
   countDown: z.boolean().default(false),
 });

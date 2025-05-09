@@ -50,7 +50,6 @@ export async function POST(req: Request) {
   gameState.currentTrackStartedAt = null;
   gameState.rounds = [];
   gameState.totalRounds = totalRounds;
-  gameState.timeRemaining = timePerSong;
   await storage.saveGameState(roomId, gameState);
   await broadcastGameState(roomCode, storage);
 
@@ -80,7 +79,6 @@ async function startGameRounds(
     gameState.currentRound = round;
     gameState.currentTrack = songs[i];
     gameState.currentTrackStartedAt = new Date();
-    gameState.timeRemaining = timePerSong;
     await storage.saveGameState(roomId, gameState);
     await broadcastGameState(roomCode, storage);
 
