@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Song } from '@shared/schema';
 import { Music2 } from 'lucide-react';
-import Image from 'next/image';
+import { Hint } from './Hint';
 import {
 	getLocalStorage,
 	LOCALSTORAGE_KEYS,
@@ -28,8 +28,9 @@ export function GamePlayer({
 }: GamePlayerProps) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const volume = getLocalStorage(LOCALSTORAGE_KEYS.VOLUME, 0.5);
-    const [currentTime, setCurrentTime] = useState(new Date().getTime());
-    const joinTimeRef = useRef(new Date().getTime());
+    // const [currentTime, setCurrentTime] = useState(new Date().getTime());
+    const [trackRunTime, setTrackRunTime] = useState(new Date().getTime());
+    const joinTimeRef = useRef(new Date().getTime()); // When user joins room
     const startedAtTime = currentTrackStartedAt instanceof Date 
         ? currentTrackStartedAt.getTime() 
         : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current;
@@ -39,10 +40,12 @@ export function GamePlayer({
 
     useEffect(()=> {
         const interval = setInterval(() => {
-            setCurrentTime(new Date().getTime());
+            const now = new Date().getTime();
+            setTrackRunTime(now - startedAtTime);
+            // setCurrentTime(new Date().getTime());
         }, 10);
         return () => clearInterval(interval);
-    }, []);
+    }, [startedAtTime]);
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -52,11 +55,10 @@ export function GamePlayer({
         audio.load();
         
         const handleLoadedMetadata = () => {
-            console.log('Duration:', audio.duration);
             if (currentTrack?.previewUrl) {
                 // song will play the last timePerSong seconds
                 // backend route can add intermission delay to game round
-                audio.currentTime = audio.duration - timePerSong + trackStartTime.current / 1000;
+                audio.currentTime = Math.max(0, audio.duration - timePerSong + trackStartTime.current / 1000);
                 audio.play();
             }
         };
@@ -108,29 +110,13 @@ export function GamePlayer({
             
             <CardContent>
                 {currentTrack && (
-                    <div className="flex flex-col items-center gap-4">
-                        {currentTrack.albumArt && (
-                            <div className="w-48 h-48 relative">
-                                <Image 
-                                    src={currentTrack.albumArt} 
-                                    alt="Album art"
-                                    className="w-full h-full object-cover rounded-md"
-                                    height={32}
-							        width={32}
-                                />
-                            </div>
-                        )}
-                        
-                        <div className="text-center">
-                            <h3 className="text-xl font-bold">{currentTrack.title}</h3>
-                            <p className="text-gray-500">{currentTrack.artist}</p>
-                        </div>
-                        
-                        <div>
-                            <p>Round: {currentRound} / {totalRounds}</p>
-                            <p>Track Time: {startedAtTime ? currentTime - startedAtTime : '0'}s</p>
-                        </div>
-                    </div>
+                    <Hint
+                    currentTrack={currentTrack}
+                    currentRound={currentRound}
+                    totalRounds={totalRounds}
+                    timePerSong={timePerSong}
+                    trackRunTime={trackRunTime}
+                    />
                 )}
                 <audio ref={audioRef} />
             </CardContent>
