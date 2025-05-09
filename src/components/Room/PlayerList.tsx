@@ -19,10 +19,7 @@ export function PlayerList({
 	hostId,
 	userId,
 	roomCode,
-}: // songsPerPlayer,
-PlayerListProps) {
-	// Sort players by score (highest first)
-	// const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+}: PlayerListProps) {
 	const [isRemoving, setIsRemoving] = useState<string | null>(null);
 	const { toast } = useToast();
 
@@ -56,48 +53,63 @@ PlayerListProps) {
 			<h2 className='font-heading text-lg font-semibold mb-4'>
 				Players ({players.length})
 			</h2>
-			<div className='space-y-3'>
-				{players.map(({ user }) => (
-					<div
-						key={user?.id}
-						className='flex items-center justify-between p-2 rounded-lg bg-surface bg-opacity-50 hover:bg-opacity-70 transition-colors'
-					>
-						<div className='flex items-center space-x-3'>
-							<Avatar>
-								<AvatarFallback>User</AvatarFallback>
-							</Avatar>
-							<div>
-								<p
-									className={`font-medium ${
-										user?.id === userId ? 'text-yellow-400' : ''
-									}`}
-								>
-									{user?.user_metadata?.display_name}
-									{user?.id === hostId && (
-										<span className='text-xs text-primary ml-1'>(Host)</span>
-									)}
-								</p>
-								{/* <p className='text-xs text-gray-400'>
-									Songs Added: {player.songsAdded}/{songsPerPlayer}
-								</p> */}
+			<div className='space-y-2'>
+				{players.map(({ user, score }) => {
+					const isHost = user?.id === hostId;
+					const isCurrentUser = user?.id === userId;
+					const initials =
+						user?.user_metadata?.display_name?.[0]?.toUpperCase() || 'U';
+
+					return (
+						<div
+							key={user?.id}
+							className='flex items-center justify-between rounded-md bg-surface bg-opacity-60 hover:bg-opacity-80 transition-colors px-4 py-3'
+						>
+							<div className='flex items-center gap-3 min-w-0'>
+								<Avatar className='h-9 w-9'>
+									<AvatarFallback className='text-xs'>
+										{initials}
+									</AvatarFallback>
+								</Avatar>
+								<div className='min-w-0'>
+									<div className='flex items-center gap-1'>
+										<span
+											className={`font-medium truncate ${
+												isCurrentUser ? 'text-yellow-400' : ''
+											}`}
+										>
+											{user?.user_metadata?.display_name}
+										</span>
+										{isHost && (
+											<span className='ml-1 text-xs text-primary font-semibold'>
+												(Host)
+											</span>
+										)}
+									</div>
+									{/* <div className="text-xs text-gray-400">
+                    Songs Added: {player.songsAdded}/{songsPerPlayer}
+                  </div> */}
+								</div>
+							</div>
+							<div className='flex items-center gap-2'>
+								<span className='text-lg font-bold text-accent tabular-nums min-w-[2ch] text-right'>
+									{score ?? 0}
+								</span>
+								{userId === hostId && user?.id !== userId && (
+									<Button
+										variant='ghost'
+										size='sm'
+										className='text-red-500 hover:text-red-700 hover:bg-red-100 p-1 h-auto'
+										onClick={() => handleKickPlayer(user?.id)}
+										disabled={isRemoving === user?.id}
+									>
+										<UserX size={16} />
+									</Button>
+								)}
 							</div>
 						</div>
-						<div className='flex items-center gap-2'>
-							<span className='text-lg font-bold text-accent'>0</span>
-							{userId === hostId && user?.id !== userId && (
-								<Button
-									variant='ghost'
-									size='sm'
-									className='text-red-500 hover:text-red-700 hover:bg-red-100 p-1 h-auto'
-									onClick={() => handleKickPlayer(user?.id)}
-									disabled={isRemoving === user?.id}
-								>
-									<UserX size={16} />
-								</Button>
-							)}
-						</div>
-					</div>
-				))}
+					);
+				})}
 
 				{players.length === 0 && (
 					<div className='text-center py-4 text-gray-400'>
