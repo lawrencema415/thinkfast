@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useBatchSendMessages } from '@/hooks/useBatchSendMessages';
 
 interface ChatBoxProps {
-	messages: Message[];
+	messages: (Message | SystemMessage)[];
 	users: Player[];
 	user: Player;
 	roomCode: string;
