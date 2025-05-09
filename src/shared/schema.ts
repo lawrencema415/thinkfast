@@ -51,7 +51,9 @@ export const songSchema = z.object({
 // Message model for chat
 export const messageSchema = z.object({
   id: z.string(),
+  avatarUrl: z.string().optional(),
   roomId: z.string(),
+  displayName: z.string(),
   user: playerSchema,
   content: z.string(),
   type: z.enum([MESSAGE_TYPE.CHAT, MESSAGE_TYPE.GUESS]),
@@ -92,7 +94,6 @@ export const gameStateSchema = z.object({
   hostId: z.string(),
   isActive: z.boolean(),
   isPlaying: z.boolean(),
-  messages: z.array(messageSchema),
   players: z.array(playerSchema),
   room: roomSchema,
   songs: z.array(songSchema),

@@ -148,7 +148,6 @@ export const useSSE = (roomCode?: string) => {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        // console.log('Message sent successfully, status:', response.status);
         return response.json();
     })
       .then(data => {

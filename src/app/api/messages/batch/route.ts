@@ -48,8 +48,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Player not found in room' }, { status: 404 });
     }
 
+    const messageStorage = await storage.getMessagesByRoomCode(roomCode);
+
     const newMessages = messages.map((msg: IncomingMessage) => ({
       id: msg.id,
+      displayName: player.user.user_metadata?.display_name,
+      avatarUrl: player.user.user_metadata?.avatarUrl,
       roomId,
       user: player,
       content: msg.content,
@@ -57,9 +61,9 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     }));
 
-    gameState.messages.push(...newMessages);
+    messageStorage.push(...newMessages);
 
-    await storage.saveGameState(roomId, gameState);
+    await storage.saveMessagesState(roomId, messageStorage);
     await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({ success: true, messages: newMessages });

@@ -23,8 +23,6 @@ export async function sendMessage({
       type,
     });
 
-    console.log(roomCode, content, type)
-
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.message || 'Failed to send message');

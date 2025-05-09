@@ -33,13 +33,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User is not in the room' }, { status: 403 });
     }
 
-    const gameState = await storage.getGameStateByRoomCode(roomCode);
-    if (!gameState) {
+    const messages = await storage.getMessagesByRoomCode(roomCode);
+    if (!messages) {
       return NextResponse.json({ error: 'Game state not found' }, { status: 404 });
     }
 
     const message = {
       id: crypto.randomUUID(),
+      displayName: user.user_metadata?.display_name,
+      avatarUrl: user.user_metadata?.avatarUrl,
       roomId: roomId,
       user: user, 
       content,
@@ -47,9 +49,9 @@ export async function POST(req: Request) {
       createdAt: new Date()
     };
 
-    gameState.messages.push(message);
+    messages.push(message);
     
-    await storage.saveGameState(roomId, gameState);
+    await storage.saveMessagesState(roomId, messages);
     await broadcastGameState(roomCode, storage);
 
     return NextResponse.json({ success: true, message });

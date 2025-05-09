@@ -7,6 +7,8 @@ import {
   ROLE,
   User,
   SYSTEM_MESSAGE_TYPE,
+  SystemMessage,
+  Message,
 } from "@/shared/schema";
 // Remove: import { User } from '@supabase/supabase-js';
 
@@ -60,7 +62,12 @@ export class RedisStorage {
 
   async saveGameState(roomId: string, gameState: GameState): Promise<void> {
     const key = `gameState:${roomId}`;
-    await redis.set(key, JSON.stringify(gameState)); // Ensure the game state is stringified
+    await redis.set(key, JSON.stringify(gameState));
+  }
+
+  async saveMessagesState(roomId: string, messages: (SystemMessage | Message)[]): Promise<void> {
+    const key = `messages:${roomId}`;
+    await redis.set(key, JSON.stringify(messages));
   }
 
   // Room operations
@@ -83,7 +90,6 @@ export class RedisStorage {
       hostId: user.id,
       isActive: true,
       isPlaying: false,
-      messages: [],
       players: [
         {
           user,
@@ -97,16 +103,23 @@ export class RedisStorage {
       timePerSong: options.timePerSong,
       timeRemaining: options.timePerSong,
       totalRounds: 0,
+      playedSongIds: [],
+      rounds: [],
+      countDown: false,
+      currentTrackStartedAt: null,
     };
 
     await redis.pipeline()
-    // Set game state
-    .set(`gameState:${id}`, JSON.stringify(gameState))
-    // For room code look up
-    .set(`roomCode:${room.code}`, room.id).exec();
+      // Set game state
+      .set(`gameState:${id}`, JSON.stringify(gameState))
+      // For room code look up
+      .set(`roomCode:${room.code}`, room.id)
+      // Initialize empty messages array for this game state
+      .set(`messages:${id}`, JSON.stringify([]))
+      .exec();
 
     return gameState;
-  }  
+  }
 
   async getRoomByCode(code: string): Promise<string | null> {
     return await redis.get<string>(`roomCode:${code}`)
@@ -138,16 +151,12 @@ export class RedisStorage {
   async addPlayerToRoom(roomCode: string, user: User): Promise<Player> {
     const roomId = await this.getRoomByCode(roomCode);
     if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
-    
+  
     const key = `gameState:${roomId}`;
     const json = await redis.get<string>(key);
-    
-    // Check if json is a valid string
     if (!json) throw new Error(`Game state not found for room ${roomId}`);
   
     let gameState: GameState;
-    
-    // Try to parse json string, or assume it's already an object
     try {
       gameState = typeof json === 'string' ? JSON.parse(json) : json;
     } catch (error) {
@@ -157,20 +166,26 @@ export class RedisStorage {
   
     const player: Player = { user, role: ROLE.PLAYER, score: 0 };
     gameState.players.push(player);
-
+  
     const displayName = user.user_metadata?.display_name || 'A new player';
-
-    const message = {
+  
+    const message: SystemMessage = {
       id: crypto.randomUUID(),
-      roomId: roomId,
+      roomId,
       content: `${displayName} has joined the room`,
       type: SYSTEM_MESSAGE_TYPE,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
-
-    gameState.messages.push(message);
-    
-    await redis.set(key, JSON.stringify(gameState));
+  
+    const messagesKey = `messages:${roomId}`;
+    const messages = await redis.get<(SystemMessage | Message)[]>(messagesKey) || [];
+    messages.push(message);
+  
+    await redis.pipeline()
+      .set(key, JSON.stringify(gameState))
+      .set(messagesKey, JSON.stringify(messages))
+      .exec();
+  
     return player;
   }
   
@@ -178,84 +193,68 @@ export class RedisStorage {
   async removePlayerFromRoom(roomCode: string, user: User, method: string): Promise<void> {
     const roomId = await this.getRoomByCode(roomCode);
     if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
-    
     const key = `gameState:${roomId}`;
     const json = await redis.get<string>(key);
-    
     if (!json) throw new Error(`Game state not found for room ${roomId}`);
-    
+
     let gameState: GameState;
-    
     try {
       gameState = typeof json === 'string' ? JSON.parse(json) : json;
     } catch (error) {
       console.error('Error parsing game state:', error);
       throw new Error('Failed to parse game state');
     }
+
     const isUserInRoom = await this.isUserInRoom(roomId, user.id);
     if (!isUserInRoom) {
       console.log(`Player ${user.id} not found in room ${roomCode}`);
       return;
     }
-  
+
     const isHost = gameState.hostId === user.id;
-    
     gameState.players = gameState.players.filter(p => p.user.id !== user.id);
     gameState.songs = gameState.songs.filter(song => song.userId !== user.id);
-    
+
     const displayName = user?.user_metadata?.display_name || 'A player';
-    
-    // Determine message content based on method
-    let content = '';
-    switch (method) {
-      case 'leave':
-        content = `${displayName} has left the room`;
-        break;
-      case 'disconnect':
-        content = `${displayName} has disconnected`;
-        break;
-      case 'kick':
-        content = `${displayName} has been removed from the room`;
-        break;
-      default:
-        content = `${displayName} has left the room`;
-        break;
-    }
-   
-    const message = {
+    const content = method === 'disconnect' ? `${displayName} has disconnected` :
+                    method === 'kick' ? `${displayName} has been removed from the room` :
+                    `${displayName} has left the room`;
+
+    const message: SystemMessage = {
       id: crypto.randomUUID(),
-      roomId: roomId,
-      content: content,
+      roomId,
+      content,
       type: SYSTEM_MESSAGE_TYPE,
       createdAt: new Date(),
-      user,
     };
-      
-    gameState.messages.push(message);
-    
-    // Assigns a new host
+
+    const messagesKey = `messages:${roomId}`;
+    const messages = await redis.get<(SystemMessage | Message)[]>(messagesKey) || [];
+    messages.push(message);
+
     if (isHost && gameState.players.length > 0) {
       const nextHost = gameState.players[0];
-      
       gameState.hostId = nextHost.user.id;
-      
       const hostIndex = gameState.players.findIndex(p => p.user.id === nextHost.user.id);
       if (hostIndex !== -1) {
         gameState.players[hostIndex].role = ROLE.HOST;
       }
-      
-      const newHostMessage = {
+
+      const newHostMessage: SystemMessage = {
         id: crypto.randomUUID(),
-        roomId: roomId,
+        roomId,
         content: `${nextHost.user.user_metadata?.display_name || 'A player'} is now the host`,
         type: SYSTEM_MESSAGE_TYPE,
-        createdAt: new Date()
+        createdAt: new Date(),
       };
-      
-      gameState.messages.push(newHostMessage);
+
+      messages.push(newHostMessage);
     }
-    
-    await redis.set(key, JSON.stringify(gameState));
+
+    await redis.pipeline()
+      .set(messagesKey, JSON.stringify(messages))
+      .set(key, JSON.stringify(gameState))
+      .exec();
   }
 
   async getPlayersInRoom(roomId: string): Promise<Player[]> {
@@ -338,6 +337,13 @@ export class RedisStorage {
     await redis.set(key, JSON.stringify(gameState));
   }
 
+  async getMessagesByRoomCode(roomCode: string): Promise<(SystemMessage | Message)[]> {
+    const roomId = await this.getRoomByCode(roomCode);
+    if (!roomId) return [];
+    const messagesKey = `messages:${roomId}`;
+    const messages = await redis.get<(SystemMessage | Message)[]>(messagesKey);
+    return messages || [];
+  }
 }
 
 export const storage = new RedisStorage();

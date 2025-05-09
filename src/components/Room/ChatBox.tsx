@@ -27,7 +27,6 @@ interface ChatBoxProps {
 
 const MessageRow = function MessageRow({
 	msg,
-	player,
 }: {
 	msg: Message | SystemMessage;
 	player: Player | null;
@@ -45,13 +44,8 @@ const MessageRow = function MessageRow({
 		);
 	}
 
-	let displayName = 'Unknown User';
-	let avatarUrl = '';
-	if (player?.user?.user_metadata) {
-		const data = player.user.user_metadata;
-		displayName = data?.display_name || 'Unknown User';
-		avatarUrl = data?.avatarUrl || '';
-	}
+	const displayName = msg.displayName;
+	const avatarUrl = msg.avatarUrl || '';
 
 	return (
 		<div
@@ -121,6 +115,8 @@ export function ChatBox({
 				const optimisticMsg: Message = {
 					id: uuidv4(),
 					roomId: roomCode,
+					displayName: user?.user.user_metadata?.display_name || 'Unknown',
+					avatarUrl: user?.user.user_metadata?.avatarUrl || '',
 					user,
 					content: message.trim(),
 					type: isGuessing ? MESSAGE_TYPE.GUESS : MESSAGE_TYPE.CHAT,

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useToast } from '@/hooks/useToast';
 import { useSSE } from '@/hooks/useSSE';
-import { GameState } from '@/shared/schema';
+import { GameState, Message, SystemMessage } from '@/shared/schema';
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import { RoomInfo } from '@/components/Room/Info';
@@ -21,6 +21,9 @@ import { CountdownOverlay } from '@/components/Room/CountdownOverlay';
 // FIXME: Update according to schema
 export default function RoomPage() {
 	const [initialState, setInitialState] = useState<GameState | null>(null);
+	const [initialMessages, setInitialMessages] = useState<
+		(SystemMessage | Message)[]
+	>([]);
 	const [countdown, setCountdown] = useState<number | null>(null);
 	const params = useParams();
 	const router = useRouter();
@@ -35,15 +38,19 @@ export default function RoomPage() {
 			if (!user) return;
 
 			try {
-				const response = await axios.get(
-					`/api/game/state?roomCode=${roomCode}`
-				);
-				const gameState: GameState = response.data.gameState;
+				const [gameStateResponse, messagesResponse] = await Promise.all([
+					axios.get(`/api/game/state?roomCode=${roomCode}`),
+					axios.get(`/api/game/messages?roomCode=${roomCode}`),
+				]);
+				const gameState: GameState = gameStateResponse.data.gameState;
+				const messages: (SystemMessage | Message)[] =
+					messagesResponse.data.messages;
 
 				setInitialState(gameState);
+				setInitialMessages(messages);
 			} catch (error) {
 				router.push('/');
-				handleError(error, 'Failed to fetch game state');
+				handleError(error, 'Failed to fetch game state or messages');
 			}
 		};
 
@@ -79,7 +86,6 @@ export default function RoomPage() {
 		currentRound,
 		currentTrack,
 		songs,
-		messages,
 		songsPerPlayer,
 		timePerSong,
 		room,
@@ -179,7 +185,7 @@ export default function RoomPage() {
 							}}
 						/>
 						<ChatBox
-							messages={messages || []}
+							messages={initialMessages || []}
 							roomCode={roomCode}
 							user={currentUser}
 							users={gameState?.players || []}
