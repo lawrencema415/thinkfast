@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Song } from '@shared/schema';
 import { Music2 } from 'lucide-react';
-import Image from 'next/image';
+import { Hint } from './Hint';
 import {
 	getLocalStorage,
 	LOCALSTORAGE_KEYS,
@@ -15,6 +15,7 @@ interface GamePlayerProps {
     totalRounds: number;
     isPlaying: boolean;
     currentTrackStartedAt: Date | null;
+    timePerSong: number;
 }
 
 export function GamePlayer({
@@ -23,22 +24,45 @@ export function GamePlayer({
     totalRounds,
     isPlaying,
     currentTrackStartedAt,
+    timePerSong,
 }: GamePlayerProps) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const volume = getLocalStorage(LOCALSTORAGE_KEYS.VOLUME, 0.5);
-    const [currentTime, setCurrentTime] = useState(new Date().getTime());
     const joinTimeRef = useRef(new Date().getTime());
-    const startedAtTime = currentTrackStartedAt instanceof Date 
-        ? currentTrackStartedAt.getTime() 
-        : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current;
-    const trackStartTime = useRef(joinTimeRef.current - startedAtTime)
+    
+    // Use state instead of ref for startedAtTime
+    const [startedAtTime, setStartedAtTime] = useState(() => 
+        currentTrackStartedAt instanceof Date 
+            ? currentTrackStartedAt.getTime() 
+            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current
+    );
+    
+    // Update startedAtTime when currentTrackStartedAt changes
+    useEffect(() => {
+        const newStartedAtTime = currentTrackStartedAt instanceof Date 
+            ? currentTrackStartedAt.getTime() 
+            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current;
+        
+        setStartedAtTime(newStartedAtTime);
+    }, [currentTrackStartedAt]);
+    
+    const [trackRunTime, setTrackRunTime] = useState(0);
+    
+    // Calculate track start offset when startedAtTime changes
+    const [trackStartTime, setTrackStartTime] = useState(0);
+    
+    useEffect(() => {
+        setTrackStartTime(Math.max(0, joinTimeRef.current - startedAtTime));
+    }, [startedAtTime]);
 
-    useEffect(()=> {
+    useEffect(() => {
         const interval = setInterval(() => {
-            setCurrentTime(new Date().getTime());
+            const now = new Date().getTime();
+            // Ensure trackRunTime is never negative and starts from 0
+            setTrackRunTime(Math.max(0, now - startedAtTime));
         }, 10);
         return () => clearInterval(interval);
-    }, []);
+    }, [startedAtTime]); // Add startedAtTime as dependency
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -47,12 +71,21 @@ export function GamePlayer({
         audio.src = currentTrack?.previewUrl || '';
         audio.load();
         
-        if (currentTrack?.previewUrl && audioRef.current) {
-            audio.src = currentTrack.previewUrl;
-            audio.currentTime = trackStartTime.current / 1000;
-            audio.play();
-        }
-    }, [currentTrack?.previewUrl, isPlaying]);
+        const handleLoadedMetadata = () => {
+            if (currentTrack?.previewUrl) {
+                // song will play the last timePerSong seconds
+                // backend route can add intermission delay to game round
+                audio.currentTime = Math.max(0, audio.duration - timePerSong + trackStartTime / 1000);
+                audio.play();
+            }
+        };
+    
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        
+        return () => {
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        };
+    }, [currentTrack?.previewUrl, isPlaying, timePerSong, trackStartTime]);
     
     useEffect(() => {
         const audio = audioRef.current;
@@ -87,29 +120,13 @@ export function GamePlayer({
             
             <CardContent>
                 {currentTrack && (
-                    <div className="flex flex-col items-center gap-4">
-                        {currentTrack.albumArt && (
-                            <div className="w-48 h-48 relative">
-                                <Image 
-                                    src={currentTrack.albumArt} 
-                                    alt="Album art"
-                                    className="w-full h-full object-cover rounded-md"
-                                    height={32}
-							        width={32}
-                                />
-                            </div>
-                        )}
-                        
-                        <div className="text-center">
-                            <h3 className="text-xl font-bold">{currentTrack.title}</h3>
-                            <p className="text-gray-500">{currentTrack.artist}</p>
-                        </div>
-                        
-                        <div>
-                            <p>Round: {currentRound} / {totalRounds}</p>
-                            <p>Track Time: {startedAtTime ? currentTime - startedAtTime : '0'}s</p>
-                        </div>
-                    </div>
+                    <Hint
+                    currentTrack={currentTrack}
+                    currentRound={currentRound}
+                    totalRounds={totalRounds}
+                    timePerSong={timePerSong}
+                    trackRunTime={trackRunTime}
+                    />
                 )}
                 <audio ref={audioRef} />
             </CardContent>

@@ -4,7 +4,7 @@ import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { broadcastGameState } from '@/lib/broadcast';
 import { Player, Song } from '@/shared/schema';
 
-const ADDED_TIME_TO_ROUND = 10000;
+const ADDED_TIME_TO_ROUND = 3000;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -80,12 +80,12 @@ async function startGameRounds(
     gameState.currentRound = round;
     gameState.currentTrack = songs[i];
     gameState.currentTrackStartedAt = new Date();
-    gameState.timeRemaining = timePerSong + ADDED_TIME_TO_ROUND;
+    gameState.timeRemaining = timePerSong;
     await storage.saveGameState(roomId, gameState);
     await broadcastGameState(roomCode, storage);
 
     // Wait for the song's timePerSong duration
-    await delay(timePerSong * 1000);
+    await delay(timePerSong * 1000 + ADDED_TIME_TO_ROUND);
 
     // If this is the last song, end the game after this round
     if (i === songs.length - 1) {
