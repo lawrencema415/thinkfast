@@ -5,8 +5,10 @@ import {
   Player,
   GameState,
   ROLE,
+  User,
+  SYSTEM_MESSAGE_TYPE,
 } from "@/shared/schema";
-import { User } from '@supabase/supabase-js';
+// Remove: import { User } from '@supabase/supabase-js';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -62,6 +64,7 @@ export class RedisStorage {
   }
 
   // Room operations
+  // In createRoom, convert user (Supabase) to your schema User type if needed
   async createRoom(user: User, options: { songsPerPlayer: number; timePerSong: number }): Promise<GameState> {
     const id = this.generateId();
     const code = generateRoomCode();
@@ -73,7 +76,7 @@ export class RedisStorage {
     };
 
     const gameState: GameState = {
-      id, // Add the id property
+      id,
       createdAt,
       currentRound: 0,
       currentTrack: null,
@@ -131,6 +134,7 @@ export class RedisStorage {
   }
 
   // Player operations
+  // In addPlayerToRoom, wrap user in Player for messages
   async addPlayerToRoom(roomCode: string, user: User): Promise<Player> {
     const roomId = await this.getRoomByCode(roomCode);
     if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
@@ -160,7 +164,7 @@ export class RedisStorage {
       id: crypto.randomUUID(),
       roomId: roomId,
       content: `${displayName} has joined the room`,
-      type: 'system',
+      type: SYSTEM_MESSAGE_TYPE,
       createdAt: new Date()
     };
 
@@ -170,6 +174,7 @@ export class RedisStorage {
     return player;
   }
   
+  // In removePlayerFromRoom, wrap user in Player for messages
   async removePlayerFromRoom(roomCode: string, user: User, method: string): Promise<void> {
     const roomId = await this.getRoomByCode(roomCode);
     if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
@@ -221,8 +226,9 @@ export class RedisStorage {
       id: crypto.randomUUID(),
       roomId: roomId,
       content: content,
-      type: 'system',
-      createdAt: new Date()
+      type: SYSTEM_MESSAGE_TYPE,
+      createdAt: new Date(),
+      user,
     };
       
     gameState.messages.push(message);
@@ -242,7 +248,7 @@ export class RedisStorage {
         id: crypto.randomUUID(),
         roomId: roomId,
         content: `${nextHost.user.user_metadata?.display_name || 'A player'} is now the host`,
-        type: 'system',
+        type: SYSTEM_MESSAGE_TYPE,
         createdAt: new Date()
       };
       

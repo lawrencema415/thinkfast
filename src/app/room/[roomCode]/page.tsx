@@ -38,21 +38,6 @@ export default function RoomPage() {
 				);
 				const gameState: GameState = response.data.gameState;
 
-				const isUserInRoom = gameState.players?.some(
-					(player) => player.user.id === user.id
-				);
-
-				if (!isUserInRoom) {
-					router.push('/');
-					toast({
-						title: 'Access denied',
-						description: 'You are not in this room',
-						variant: 'destructive',
-						duration: 3000,
-					});
-					return;
-				}
-
 				setInitialState(gameState);
 			} catch (error) {
 				router.push('/');
@@ -94,6 +79,19 @@ export default function RoomPage() {
 
 	if (isPlaying) {
 		return <div>Started!</div>;
+	}
+
+	const currentUser = players.find((player) => player.user.id === id);
+
+	if (!currentUser || !isUserInRoom) {
+		router.push('/');
+		toast({
+			title: 'Access denied',
+			description: 'You are not in this room',
+			variant: 'destructive',
+			duration: 3000,
+		});
+		return;
 	}
 
 	return (
@@ -140,6 +138,7 @@ export default function RoomPage() {
 						<ChatBox
 							messages={messages || []}
 							roomCode={roomCode}
+							user={currentUser}
 							users={gameState?.players || []}
 							isGuessing={false}
 						/>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { storage } from '../../storage';
 import { broadcastGameState } from '@/lib/broadcast';
+import { SYSTEM_MESSAGE_TYPE } from '@/shared/schema';
 
 export async function PUT(req: Request) {
   try {
@@ -45,7 +46,7 @@ export async function PUT(req: Request) {
       content: `Room settings updated: ${songsPerPlayer !== undefined ? `${songsPerPlayer} songs per player` : ''}${
         songsPerPlayer !== undefined && timePerSong !== undefined ? ' and ' : ''
       }${timePerSong !== undefined ? `${timePerSong} seconds per song` : ''}`,
-      type: 'system',
+      type: SYSTEM_MESSAGE_TYPE,
       createdAt: new Date()
     };
     

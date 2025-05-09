@@ -1,58 +1,135 @@
-import { useState, useRef, useEffect } from 'react';
-import { Message, Player } from '@shared/schema';
+'use client';
+
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import {
+	Message,
+	Player,
+	MESSAGE_TYPE,
+	SYSTEM_MESSAGE_TYPE,
+	SystemMessage,
+} from '@/shared/schema';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, User2 } from 'lucide-react';
-import { sendMessage } from '@/lib/sendMessage';
 import { useToast } from '@/hooks/useToast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { v4 as uuidv4 } from 'uuid';
+import { useBatchSendMessages } from '@/hooks/useBatchSendMessages';
 
 interface ChatBoxProps {
 	messages: Message[];
 	users: Player[];
-	roomCode: string; // Add roomCode prop
+	user: Player;
+	roomCode: string;
 	isGuessing?: boolean;
 }
+
+const MessageRow = function MessageRow({
+	msg,
+	player,
+}: {
+	msg: Message | SystemMessage;
+	player: Player | null;
+}) {
+	const isSystem = msg.type === SYSTEM_MESSAGE_TYPE;
+	const isGuess = msg.type === MESSAGE_TYPE.GUESS;
+
+	if (isSystem) {
+		return (
+			<div className='flex items-start space-x-2 text-yellow-400 italic text-sm'>
+				<div className='flex-1 break-words'>
+					<span>{msg.content}</span>
+				</div>
+			</div>
+		);
+	}
+
+	console.log('player', player);
+
+	let displayName = 'Unknown User';
+	let avatarUrl = '';
+	if (player?.user?.user_metadata) {
+		const data = player.user.user_metadata;
+		displayName = data?.display_name || 'Unknown User';
+		avatarUrl = data?.avatarUrl || '';
+	}
+
+	return (
+		<div
+			className={`flex items-start space-x-2 ${
+				isGuess ? 'text-green-400' : ''
+			}`}
+		>
+			<Avatar className='h-8 w-8'>
+				<AvatarImage src={avatarUrl} alt={displayName} />
+				<AvatarFallback>
+					<User2 className='w-4 h-4' />
+				</AvatarFallback>
+			</Avatar>
+			<div className='flex-1 break-words'>
+				<span className='font-medium mr-2'>{displayName}:</span>
+				<span>{msg.content}</span>
+			</div>
+		</div>
+	);
+};
 
 export function ChatBox({
 	messages,
 	roomCode,
 	users,
+	user,
 	isGuessing = false,
 }: ChatBoxProps) {
 	const [message, setMessage] = useState('');
 	const [isSending, setIsSending] = useState(false);
-	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([]);
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
 	const { toast } = useToast();
 
-	const scrollToBottom = () => {
+	const addMessageToBatch = useBatchSendMessages(
+		roomCode,
+		isGuessing ? 'guess' : 'chat'
+	);
+
+	// Remove optimistic messages that are now present in server messages
+	useEffect(() => {
+		setOptimisticMessages((prev) =>
+			prev.filter(
+				(optimisticMsg) =>
+					!messages.some((serverMsg) => serverMsg.id === optimisticMsg.id)
+			)
+		);
+	}, [messages]);
+
+	// Scroll to bottom when new messages arrive
+	useEffect(() => {
 		if (scrollAreaRef.current) {
 			const scrollContainer = scrollAreaRef.current.querySelector(
 				'[data-radix-scroll-area-viewport]'
-			);
+			) as HTMLDivElement | null;
 			if (scrollContainer) {
 				scrollContainer.scrollTop = scrollContainer.scrollHeight;
 			}
 		}
-	};
-
-	// Scroll to bottom when new messages arrive
-	useEffect(() => {
-		scrollToBottom();
-	}, [messages]);
+	}, [messages, optimisticMessages]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (message.trim()) {
 			try {
 				setIsSending(true);
-				await sendMessage({
-					roomCode,
+				const optimisticMsg: Message = {
+					id: uuidv4(),
+					roomId: roomCode,
+					user,
 					content: message.trim(),
-					type: isGuessing ? 'guess' : 'chat',
-				});
+					type: isGuessing ? MESSAGE_TYPE.GUESS : MESSAGE_TYPE.CHAT,
+					createdAt: new Date(),
+				};
+				setOptimisticMessages((prev) => [...prev, optimisticMsg]);
+				addMessageToBatch({ content: message.trim(), id: optimisticMsg.id });
 				setMessage('');
 			} catch (error) {
 				toast({
@@ -66,17 +143,20 @@ export function ChatBox({
 		}
 	};
 
-	// Enhanced function to find user by userId with fallback
-	const findUserByUserId = (userId: string) => {
-		// First try to find the player in the current users array
-		const player = users.find((player) => player.user?.id === userId);
+	const allMessages = useMemo(
+		() => [...messages, ...optimisticMessages],
+		[messages, optimisticMessages]
+	);
 
-		// If we found the player, return it
-		if (player) return player;
-
-		// No player found in current users array
-		return null;
-	};
+	const userMap = useMemo(() => {
+		const map = new Map<string, Player>();
+		users.forEach((player) => {
+			if (player.user?.id) {
+				map.set(player.user.id, player);
+			}
+		});
+		return map;
+	}, [users]);
 
 	return (
 		<div className='bg-gray-800 rounded-lg p-4 flex flex-col h-[500px]'>
@@ -88,46 +168,17 @@ export function ChatBox({
 
 			<ScrollArea className='flex-1 mb-4' ref={scrollAreaRef}>
 				<div className='space-y-4'>
-					{messages.map((msg, i) => {
+					{allMessages.map((msg, index) => {
 						let player: Player | null = null;
-						if (msg.user) {
-							player = findUserByUserId(msg.user?.id);
+						if (
+							(msg.type === MESSAGE_TYPE.CHAT ||
+								msg.type === MESSAGE_TYPE.GUESS) &&
+							msg.user?.user?.id
+						) {
+							player = userMap.get(msg.user.user.id) || null;
 						}
-
-						const isSystem = msg.type === 'system';
-						const isGuess = msg.type === 'guess';
-
-						const displayName =
-							msg.user?.user_metadata?.display_name || 'Unknown User';
-
-						return (
-							<div
-								key={i}
-								className={`flex items-start space-x-2 ${
-									isSystem ? 'text-yellow-400 italic text-sm' : ''
-								} ${isGuess ? 'text-green-400' : ''}`}
-							>
-								{!isSystem && (
-									<Avatar className='h-8 w-8'>
-										<AvatarImage
-											src={player?.user?.user_metadata?.avatarUrl || ''}
-											alt={displayName}
-										/>
-										<AvatarFallback>
-											<User2 className='w-4 h-4' />
-										</AvatarFallback>
-									</Avatar>
-								)}
-								<div className='flex-1 break-words'>
-									{!isSystem && (
-										<span className='font-medium mr-2'>{displayName}:</span>
-									)}
-									<span>{msg.content}</span>
-								</div>
-							</div>
-						);
+						return <MessageRow key={index} msg={msg} player={player} />;
 					})}
-					<div ref={messagesEndRef} />
 				</div>
 			</ScrollArea>
 

@@ -50,7 +50,6 @@ export const useSSE = (roomCode?: string) => {
         eventSourceRef.current = sse;
     
         sse.onopen = () => {
-            // console.log('SSE connection opened');
             setIsConnected(true);
             
             if (reconnectTimeoutRef.current) {
@@ -60,11 +59,9 @@ export const useSSE = (roomCode?: string) => {
         };
     
         sse.onmessage = (event) => {
-            // console.log('Raw SSE event received:', event.data);
             
             try {
                 const data: SSEMessage = JSON.parse(event.data);
-                console.log('Message from SSE', data);
     
                 if ('payload' in data) {
                     // Handle game-related messages

@@ -1,16 +1,31 @@
 import { z } from "zod";
-import { User as SupabaseUser } from '@supabase/supabase-js';
 
 export enum ROLE {
   HOST = 'host',
   PLAYER = 'player'
 }
 
+export enum MESSAGE_TYPE {
+  CHAT = 'chat',
+  GUESS = 'guess'
+}
+
+export const SYSTEM_MESSAGE_TYPE = 'system' as const;
+
 const roleSchema = z.enum([ROLE.HOST, ROLE.PLAYER]);
+
+export const userSchema = z.object({
+  id: z.string(),
+  email: z.string().optional(),
+  user_metadata: z.object({
+    display_name: z.string().optional().default("OogaBooga"),
+    avatarUrl: z.string().optional(),
+  }).optional(),
+});
 
 // Player model
 export const playerSchema = z.object({
-  user: z.custom<SupabaseUser>(),
+  user: userSchema,
   role: roleSchema,
   score: z.number().default(0),
 });
@@ -37,22 +52,30 @@ export const songSchema = z.object({
 export const messageSchema = z.object({
   id: z.string(),
   roomId: z.string(),
-  user: z.custom<SupabaseUser>().optional(),
+  user: playerSchema,
   content: z.string(),
-  type: z.string().default("chat"),
-  createdAt: z.date()
+  type: z.enum([MESSAGE_TYPE.CHAT, MESSAGE_TYPE.GUESS]),
+  createdAt: z.string().transform(val => new Date(val))
+});
+
+export const systemMessageSchema = z.object({
+  id: z.string(),
+  roomId: z.string(),
+  content: z.string(),
+  type: z.literal(SYSTEM_MESSAGE_TYPE),
+  createdAt: z.string().transform(val => new Date(val))
 });
 
 // GameState model
 export const gameStateSchema = z.object({
   id: z.string(),
-  createdAt: z.date(),
+  createdAt: z.string().transform(val => new Date(val)),
   currentRound: z.number(),
   currentTrack: songSchema.nullable(),
   hostId: z.string(),
   isActive: z.boolean(),
   isPlaying: z.boolean(),
-  messages: z.array(messageSchema),
+  messages: z.array(z.union([messageSchema, systemMessageSchema])),
   players: z.array(playerSchema),
   room: roomSchema,
   songs: z.array(songSchema),
@@ -73,4 +96,6 @@ export type Player = z.infer<typeof playerSchema>;
 export type Room = z.infer<typeof roomSchema>;
 export type Song = z.infer<typeof songSchema>;
 export type Message = z.infer<typeof messageSchema>;
+export type SystemMessage = z.infer<typeof systemMessageSchema>;
 export type GameState = z.infer<typeof gameStateSchema>;
+export type User = z.infer<typeof userSchema>;

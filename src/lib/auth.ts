@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@supabase/supabase-js';
 import { cache } from 'react';
+import { userSchema } from "@/shared/schema";
 
 // Environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -103,7 +104,7 @@ export async function verifyAuthInRouteHandler() {
       };
     }
 
-    return { user: data.user, response: null };
+    return { user: userSchema.parse(data.user), response: null };
   } catch (error) {
     console.error('Route handler auth error:', error);
     return {

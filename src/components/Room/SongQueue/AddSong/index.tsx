@@ -71,8 +71,6 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 		}
 	}, [isOpen]);
 
-	console.log(songQueue);
-
 	// Handle audio element events
 	useEffect(() => {
 		setMounted(true);
@@ -114,6 +112,8 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 			setIsSearching(false);
 		}
 	};
+
+	console.log('Remove later if not needed', songQueue);
 
 	const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (e.key === 'Enter') {

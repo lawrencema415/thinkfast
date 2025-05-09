@@ -43,8 +43,6 @@ export function RoomInfo({
 		}
 	};
 
-	console.log('songs', songs);
-
 	const disableStart = !songs.length;
 
 	return (
@@ -116,9 +114,7 @@ export function RoomInfo({
 				/>
 				<LeaveButton roomCode={code} />
 				<div>
-					<DummyButton 
-						roomCode={code}
-					/>
+					<DummyButton roomCode={code} />
 				</div>
 			</div>
 		</div>
