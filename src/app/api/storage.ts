@@ -2,7 +2,6 @@ import { Redis } from '@upstash/redis';
 import {
   type Room,
   Song,
-  Message,
   Player,
   GameState,
   ROLE,
@@ -136,29 +135,6 @@ export class RedisStorage {
     return state as GameState | null;
   }
 
-  async updateRoom(code: string, updates: Partial<Room>): Promise<Room> {
-    const roomId = await this.getRoomByCode(code);
-    if (!roomId) throw new Error(`Room with code '${code}' not found.`);
-
-    const key = `gameState:${roomId}`;
-    const json = await redis.get<string>(key);
-
-    let gameState: GameState;
-    
-    // Try to parse json string, or assume it's already an object
-    try {
-      gameState = typeof json === 'string' ? JSON.parse(json) : json;
-    } catch (error) {
-      console.error('Error parsing game state:', error);
-      throw new Error('Failed to parse game state');
-    }
-
-    // TODO: not working
-    const updatedRoom = { ...gameState.room, ...updates };
-    await redis.set(key, JSON.stringify(gameState));
-    return updatedRoom;
-  }
-
   // Player operations
   async addPlayerToRoom(roomCode: string, user: User): Promise<Player> {
     const roomId = await this.getRoomByCode(roomCode);
@@ -216,18 +192,11 @@ export class RedisStorage {
       console.error('Error parsing game state:', error);
       throw new Error('Failed to parse game state');
     }
-
-    if (!this.isUserInRoom(roomId, user.id) === null) {
+    const isUserInRoom = await this.isUserInRoom(roomId, user.id);
+    if (!isUserInRoom) {
       console.log(`Player ${user.id} not found in room ${roomCode}`);
       return;
     }
-  
-    //Check if the player is already in the room preventing duplication on SSE disconnection
-    // const playerIndex = gameState.players.findIndex(p => p.user.id === user.id);
-    // if (playerIndex === -1) {
-    //   console.log(`Player ${user.id} not found in room ${roomCode}`);
-    //   return;
-    // }
   
     const isHost = gameState.hostId === user.id;
     
@@ -297,18 +266,6 @@ export class RedisStorage {
     return json.players;
   }
 
-  async getSongsForRoom(roomId: string): Promise<Song[]> {
-    const resolvedRoomId = await this.resolveRoomId(roomId);
-    if (!resolvedRoomId) return [];
-  
-    const json = await redis.get<GameState>(`gameState:${resolvedRoomId}`);
-    if (!json) return [];
-
-    console.log('json', json); // Log the raw JSON string to the consol
-  
-    return json.songs;
-  }
-
   async addSongToRoom(roomCode: string, song: Song): Promise<Song> {
     const roomId = await this.getRoomByCode(roomCode);
     if (!roomId) throw new Error(`Room with code '${roomCode}' not found.`);
@@ -374,35 +331,10 @@ export class RedisStorage {
       const j = Math.floor(Math.random() * (i + 1));
       [songs[i], songs[j]] = [songs[j], songs[i]]; // Swap elements
     }
-
-    console.log('before', gameState.songs);
     
     gameState.songs = songs;
-
-    console.log('after', gameState.songs);
     
     await redis.set(key, JSON.stringify(gameState));
-  }
-
-  async addMessageToRoom(roomId: string, message: Omit<Message, 'id' | 'timestamp'>): Promise<Message> {
-    const resolvedRoomId = await this.resolveRoomId(roomId);
-    if (!resolvedRoomId) throw new Error(`Room with ID or code '${roomId}' not found.`);
-  
-    const key = `gameState:${resolvedRoomId}`;
-    const json = await redis.get<string>(key);
-    if (!json) throw new Error(`Game state not found for room ${resolvedRoomId}`);
-  
-    const gameState = JSON.parse(json) as GameState;
-  
-    const newMessage: Message = {
-      ...message,
-      id: this.generateId(),
-      createdAt: new Date(),
-    };
-  
-    gameState.messages.push(newMessage);
-    await redis.set(key, JSON.stringify(gameState)); // Ensure game state is stringified
-    return newMessage;
   }
 
 }
