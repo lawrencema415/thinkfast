@@ -87,6 +87,7 @@ export default function RoomPage() {
 		players,
 		hostId,
 		isPlaying,
+		currentTrackStartedAt,
 	} = initialState;
 
 	// Final check before rendering - if user somehow got past the useEffect checks
@@ -96,8 +97,31 @@ export default function RoomPage() {
 		return <LoadingScreen />;
 	}
 
+	const timeLeft = () => {
+		const now = new Date();
+		const startedAt = currentTrackStartedAt
+			? new Date(currentTrackStartedAt)
+			: null;
+		const timeRemaining = startedAt ? now.getTime() - startedAt.getTime() : 0;
+		return timePerSong - timeRemaining;
+	};
+
 	if (isPlaying) {
-		return <div>Started!</div>;
+		return (
+			<div>
+				{countdown !== null && <CountdownOverlay countdown={countdown} />}
+				<MusicPlayer
+					currentTrack={currentTrack}
+					currentRound={currentRound}
+					totalRounds={totalRounds}
+					isPlaying={false}
+					timeRemaining={timeLeft()}
+					onPlayPause={function (): void {
+						throw new Error('Function not implemented.');
+					}}
+				/>
+			</div>
+		);
 	}
 
 	const currentUser = players.find((player) => player.user.id === id);
@@ -146,7 +170,6 @@ export default function RoomPage() {
 					<div className='lg:w-2/4'>
 						<MusicPlayer
 							currentTrack={currentTrack}
-							submitter={null}
 							currentRound={0}
 							totalRounds={0}
 							isPlaying={false}

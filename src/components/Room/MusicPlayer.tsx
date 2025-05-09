@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Player, Song } from '@shared/schema';
+import { Song } from '@shared/schema';
 import { Music2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import ReactPlayer from 'react-player';
@@ -7,7 +7,6 @@ import Image from 'next/image';
 
 interface MusicPlayerProps {
 	currentTrack: Song | null;
-	submitter: Player | null;
 	currentRound: number;
 	totalRounds: number;
 	isPlaying: boolean;
