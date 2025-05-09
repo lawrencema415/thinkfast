@@ -4,6 +4,8 @@ import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { broadcastGameState } from '@/lib/broadcast';
 import { Player, Song } from '@/shared/schema';
 
+const ADDED_TIME_TO_ROUND = 10000;
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -78,7 +80,7 @@ async function startGameRounds(
     gameState.currentRound = round;
     gameState.currentTrack = songs[i];
     gameState.currentTrackStartedAt = new Date();
-    gameState.timeRemaining = timePerSong;
+    gameState.timeRemaining = timePerSong + ADDED_TIME_TO_ROUND;
     await storage.saveGameState(roomId, gameState);
     await broadcastGameState(roomCode, storage);
 
@@ -95,7 +97,7 @@ async function startGameRounds(
       gameState.currentTrack = null;
       gameState.currentTrackStartedAt = null;
       gameState.currentRound = 0;
-      gameState.songs = [];
+      // gameState.songs = []; 
       gameState.rounds = [];
       await storage.saveGameState(roomId, gameState);
       await broadcastGameState(roomCode, storage);
