@@ -112,21 +112,6 @@ export default function RoomPage() {
 	// 	return timePerSong - timeRemaining;
 	// };
 
-	if (isPlaying) {
-		return (
-			<div>
-				{countdown !== null && <CountdownOverlay countdown={countdown} />}
-				<GamePlayer
-					currentTrack={currentTrack}
-					currentRound={currentRound}
-					totalRounds={totalRounds}
-					isPlaying={false}
-					currentTrackStartedAt={currentTrackStartedAt}
-				/>
-			</div>
-		);
-	}
-
 	const currentUser = players.find((player) => player.user.id === id);
 
 	if (!currentUser || !isUserInRoom) {
@@ -138,6 +123,29 @@ export default function RoomPage() {
 			duration: 3000,
 		});
 		return;
+	}
+
+	if (isPlaying) {
+		return (
+			<div>
+				{countdown !== null && <CountdownOverlay countdown={countdown} />}
+				<GamePlayer
+					currentTrack={currentTrack}
+					currentRound={currentRound}
+					totalRounds={totalRounds}
+					isPlaying={false}
+					currentTrackStartedAt={currentTrackStartedAt}
+					timePerSong={timePerSong}
+				/>
+				<ChatBox
+					messages={initialMessages || []}
+					roomCode={roomCode}
+					user={currentUser}
+					users={gameState?.players || []}
+					isGuessing={true}
+				/>
+			</div>
+		);
 	}
 
 	return (
@@ -177,6 +185,7 @@ export default function RoomPage() {
 							totalRounds={0}
 							isPlaying={false}
 							currentTrackStartedAt={currentTrackStartedAt}
+							timePerSong={timePerSong}
 						/>
 						<ChatBox
 							messages={initialMessages || []}

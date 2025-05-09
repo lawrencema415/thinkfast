@@ -15,6 +15,7 @@ interface GamePlayerProps {
     totalRounds: number;
     isPlaying: boolean;
     currentTrackStartedAt: Date | null;
+    timePerSong: number;
 }
 
 export function GamePlayer({
@@ -23,6 +24,7 @@ export function GamePlayer({
     totalRounds,
     isPlaying,
     currentTrackStartedAt,
+    timePerSong,
 }: GamePlayerProps) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const volume = getLocalStorage(LOCALSTORAGE_KEYS.VOLUME, 0.5);
@@ -31,6 +33,8 @@ export function GamePlayer({
     const startedAtTime = currentTrackStartedAt instanceof Date 
         ? currentTrackStartedAt.getTime() 
         : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : joinTimeRef.current;
+
+    // sync up client audio that join in the middle of round
     const trackStartTime = useRef(joinTimeRef.current - startedAtTime)
 
     useEffect(()=> {
@@ -47,12 +51,29 @@ export function GamePlayer({
         audio.src = currentTrack?.previewUrl || '';
         audio.load();
         
-        if (currentTrack?.previewUrl && audioRef.current) {
-            audio.src = currentTrack.previewUrl;
-            audio.currentTime = trackStartTime.current / 1000;
-            audio.play();
-        }
-    }, [currentTrack?.previewUrl, isPlaying]);
+        const handleLoadedMetadata = () => {
+            console.log('Duration:', audio.duration);
+            if (currentTrack?.previewUrl) {
+                // song will play the last timePerSong seconds
+                // backend route can add intermission delay to game round
+                audio.currentTime = audio.duration - timePerSong + trackStartTime.current / 1000;
+                audio.play();
+            }
+        };
+    
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        
+        // commented function starts song at duration 0:00
+        // if (currentTrack?.previewUrl && audioRef.current) {
+        //     audio.src = currentTrack.previewUrl;
+        //     audio.currentTime = trackStartTime.current / 1000;
+        //     audio.play();
+        // }
+
+        return () => {
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        };
+    }, [currentTrack?.previewUrl, isPlaying, timePerSong]);
     
     useEffect(() => {
         const audio = audioRef.current;
