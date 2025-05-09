@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { storage } from '../../storage';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { broadcastGameState } from '@/lib/broadcast';
-import { Player, Song } from '@/shared/schema';
+import { Player, Song, Round } from '@/shared/schema';
 
 const ADDED_TIME_TO_ROUND = 3000;
 
@@ -45,10 +45,6 @@ export async function POST(req: Request) {
   // Start countdown
   gameState.countDown = true;
   gameState.isPlaying = false;
-  gameState.currentRound = 0;
-  gameState.currentTrack = null;
-  gameState.currentTrackStartedAt = null;
-  gameState.rounds = [];
   gameState.totalRounds = totalRounds;
   await storage.saveGameState(roomId, gameState);
   await broadcastGameState(roomCode, storage);
@@ -68,15 +64,26 @@ async function startGameRounds(
   timePerSong: number,
   songs: Song[]
 ) {
-  let round = 1;
+  let index = 1;
   for (let i = 0; i < songs.length; i++) {
     // Set up round
     let gameState = await storage.getGameStateByRoomCode(roomCode);
     if (!gameState) return;
 
+    const round: Round = {
+      id: crypto.randomUUID(),
+      roundNumber: index,
+      song: songs[i],
+      startedAt: new Date(),
+      hint: '',
+      guesses: [],
+      winnerId: null
+    }
+
     gameState.countDown = false;
     gameState.isPlaying = true;
-    gameState.currentRound = round;
+    gameState.round = round
+    gameState.currentRound = index;
     gameState.currentTrack = songs[i];
     gameState.currentTrackStartedAt = new Date();
     await storage.saveGameState(roomId, gameState);
@@ -95,8 +102,8 @@ async function startGameRounds(
       gameState.currentTrack = null;
       gameState.currentTrackStartedAt = null;
       gameState.currentRound = 0;
-      // gameState.songs = []; 
-      gameState.rounds = [];
+      // gameState.songs = []; // TURNED OFF FOR DEV, DONT WANT TO REFETCH
+      gameState.round = null;
       await storage.saveGameState(roomId, gameState);
       await broadcastGameState(roomCode, storage);
       return;
@@ -111,6 +118,6 @@ async function startGameRounds(
 
     await delay(3000); // 3s interval
 
-    round++;
+    index++;
   }
 }

@@ -44,8 +44,9 @@ export class RedisStorage {
   }
 
 
-  async isUserInRoom(roomId: string, userId: string): Promise<boolean | null> {
 
+
+  async isUserInRoom(roomId: string, userId: string): Promise<boolean | null> {
     const key = `gameState:${roomId}`;
     const gameState = await redis.get<GameState>(key);
     
@@ -87,6 +88,7 @@ export class RedisStorage {
       createdAt,
       currentRound: 0,
       currentTrack: null,
+      currentTrackHint: '',
       hostId: user.id,
       isActive: true,
       isPlaying: false,
@@ -101,10 +103,9 @@ export class RedisStorage {
       songs: [],
       songsPerPlayer: options.songsPerPlayer,
       timePerSong: options.timePerSong,
-      timeRemaining: options.timePerSong,
       totalRounds: 0,
-      playedSongIds: [],
-      rounds: [],
+      // playedSongIds: [],
+      round: null,
       countDown: false,
       currentTrackStartedAt: null,
     };
