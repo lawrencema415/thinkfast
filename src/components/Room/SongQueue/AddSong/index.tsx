@@ -281,9 +281,9 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 									<div className='bg-gray-800 rounded-lg p-3'>
 										<h4 className='font-medium mb-2'>Search Results</h4>
 										<div className='max-h-60 overflow-y-auto space-y-2'>
-											{searchResults.map((result, index) => (
+											{searchResults.map((result) => (
 												<div
-													key={index}
+													key={result.id}
 													className={`flex items-center p-2 rounded hover:bg-surface cursor-pointer transition-colors ${
 														isSelected(result) ? 'bg-muted' : ''
 													}`}

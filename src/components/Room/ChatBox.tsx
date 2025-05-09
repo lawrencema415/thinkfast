@@ -162,7 +162,7 @@ export function ChatBox({
 
 			<ScrollArea className='flex-1 mb-4' ref={scrollAreaRef}>
 				<div className='space-y-4'>
-					{allMessages.map((msg, index) => {
+					{allMessages.map((msg) => {
 						let player: Player | null = null;
 						if (
 							(msg.type === MESSAGE_TYPE.CHAT ||
@@ -171,7 +171,7 @@ export function ChatBox({
 						) {
 							player = userMap.get(msg.user.user.id) || null;
 						}
-						return <MessageRow key={index} msg={msg} player={player} />;
+						return <MessageRow key={msg.id} msg={msg} player={player} />;
 					})}
 				</div>
 			</ScrollArea>

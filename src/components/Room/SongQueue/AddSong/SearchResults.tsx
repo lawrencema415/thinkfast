@@ -23,9 +23,9 @@ const SearchResults: React.FC<SongSearchResultsProps> = ({
 
 	return (
 		<div className='space-y-4'>
-			{results.map((song, index) => (
+			{results.map((song) => (
 				<div
-					key={index}
+					key={song.id}
 					className='flex items-center space-x-4 p-4 border rounded cursor-pointer hover:bg-gray-100'
 					onClick={() => onSelect(song)}
 				>
