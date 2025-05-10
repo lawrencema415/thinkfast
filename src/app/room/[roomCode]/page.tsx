@@ -133,13 +133,12 @@ export default function RoomPage() {
 				<GamePlayer
 					round={round}
 					totalRounds={totalRounds}
-					isPlaying={false}
+					isPlaying={isPlaying}
 					timePerSong={timePerSong}
 				/>
 				{!isPlaying && (
 					<ChatBox
-						currentTrack={currentTrack}
-						isGuessing={true}
+						isGuessing={false}
 						messages={initialMessages || []}
 						roomCode={roomCode}
 						user={currentUser}
@@ -203,8 +202,9 @@ export default function RoomPage() {
 								roomCode={roomCode}
 								user={currentUser}
 								users={gameState?.players || []}
-								isGuessing={false}
+								isGuessing={true}
 								round={round}
+								currentTrack={currentTrack}
 							/>
 						) : (
 							<SongQueue songQueue={songs} userId={id} roomCode={roomCode} />

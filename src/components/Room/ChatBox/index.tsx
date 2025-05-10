@@ -44,6 +44,7 @@ export function ChatBox({
 	const [message, setMessage] = useState('');
 	const [isSending, setIsSending] = useState(false);
 	const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([]);
+	const [userGuessed, setUserGuessed] = useState(false);
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
 	const { toast } = useToast();
 
@@ -61,6 +62,10 @@ export function ChatBox({
 			)
 		);
 	}, [messages]);
+
+	useEffect(() => {
+		setUserGuessed(false);
+	}, [round]);
 
 	// Scroll to bottom when new messages arrive
 	useEffect(() => {
@@ -81,7 +86,7 @@ export function ChatBox({
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (hasGuessed) {
+		if (hasGuessed || userGuessed) {
 			setMessage('');
 			toast({
 				title: 'You have already guessed the song!',
@@ -108,6 +113,7 @@ export function ChatBox({
 							timePerSong,
 							userId: user.user.id,
 						};
+						setUserGuessed(true);
 
 						setMessage('');
 						await axios.post('/api/game/guess', guessData).catch((error) => {
