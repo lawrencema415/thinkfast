@@ -43,8 +43,13 @@ export class RedisStorage {
     return crypto.randomUUID();
   }
 
-
-
+  async saveGameAndMessages(roomId: string, gameState: GameState, messages: (SystemMessage | Message)[]): Promise<void> {
+    await redis
+      .pipeline()
+      .set(`gameState:${roomId}`, JSON.stringify(gameState))
+      .set(`messages:${roomId}`, JSON.stringify(messages))
+      .exec();
+  }
 
   async isUserInRoom(roomId: string, userId: string): Promise<boolean | null> {
     const key = `gameState:${roomId}`;

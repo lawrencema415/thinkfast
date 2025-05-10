@@ -18,9 +18,9 @@ export const userSchema = z.object({
   id: z.string(),
   email: z.string().optional(),
   user_metadata: z.object({
-    display_name: z.string().optional().default("OogaBooga"),
+    display_name: z.string().default("Unknown User"),
     avatarUrl: z.string().optional(),
-  }).optional(),
+  }),
 });
 
 // Player model

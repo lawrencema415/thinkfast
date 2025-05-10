@@ -23,14 +23,13 @@ import MusicPlayer from './MusicPlayer';
 
 interface AddSongProps {
 	roomCode: string;
-	songQueue: SpotifyTrack[];
 	userId: string;
 }
 
 type SourceType = 'spotify' | 'youtube';
 // type SearchResult = SpotifyTrack | YouTubeVideo;
 
-export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
+export function AddSong({ roomCode, userId }: AddSongProps) {
 	const { toast } = useToast();
 	const { addSongMutation } = useGame();
 	const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -112,8 +111,6 @@ export function AddSong({ roomCode, songQueue, userId }: AddSongProps) {
 			setIsSearching(false);
 		}
 	};
-
-	console.log('Remove later if not needed', songQueue);
 
 	const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (e.key === 'Enter') {

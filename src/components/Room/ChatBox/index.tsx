@@ -5,17 +5,20 @@ import {
 	Message,
 	Player,
 	MESSAGE_TYPE,
-	SYSTEM_MESSAGE_TYPE,
 	SystemMessage,
+	Song,
+	Round,
 } from '@/shared/schema';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, User2 } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { v4 as uuidv4 } from 'uuid';
 import { useBatchSendMessages } from '@/hooks/useBatchSendMessages';
+import { MessageRow } from './MessageRow';
+import axios from 'axios';
+import { fuzzyMatch } from './utils';
 
 interface ChatBoxProps {
 	messages: (Message | SystemMessage)[];
@@ -23,49 +26,10 @@ interface ChatBoxProps {
 	user: Player;
 	roomCode: string;
 	isGuessing?: boolean;
+	currentTrack?: Song | null;
+	round: Round | null;
+	timePerSong: number;
 }
-
-const MessageRow = function MessageRow({
-	msg,
-}: {
-	msg: Message | SystemMessage;
-	player: Player | null;
-}) {
-	const isSystem = msg.type === SYSTEM_MESSAGE_TYPE;
-	const isGuess = msg.type === MESSAGE_TYPE.GUESS;
-
-	if (isSystem) {
-		return (
-			<div className='flex items-start space-x-2 text-yellow-400 italic text-sm'>
-				<div className='flex-1 break-words'>
-					<span>{msg.content}</span>
-				</div>
-			</div>
-		);
-	}
-
-	const displayName = msg.displayName;
-	const avatarUrl = msg.avatarUrl || '';
-
-	return (
-		<div
-			className={`flex items-start space-x-2 ${
-				isGuess ? 'text-green-400' : ''
-			}`}
-		>
-			<Avatar className='h-8 w-8'>
-				<AvatarImage src={avatarUrl} alt={displayName} />
-				<AvatarFallback>
-					<User2 className='w-4 h-4' />
-				</AvatarFallback>
-			</Avatar>
-			<div className='flex-1 break-words'>
-				<span className='font-medium mr-2'>{displayName}:</span>
-				<span>{msg.content}</span>
-			</div>
-		</div>
-	);
-};
 
 export function ChatBox({
 	messages,
@@ -73,6 +37,9 @@ export function ChatBox({
 	users,
 	user,
 	isGuessing = false,
+	currentTrack,
+	timePerSong,
+	round,
 }: ChatBoxProps) {
 	const [message, setMessage] = useState('');
 	const [isSending, setIsSending] = useState(false);
@@ -107,11 +74,55 @@ export function ChatBox({
 		}
 	}, [messages, optimisticMessages]);
 
+	const hasGuessed = round?.guesses.some(
+		(guess) => guess.userId === user.user.id
+	);
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+
+		if (hasGuessed) {
+			setMessage('');
+			toast({
+				title: 'You have already guessed the song!',
+				description: 'You can only guess once',
+				variant: 'default',
+				duration: 3000,
+			});
+			return;
+		}
+
 		if (message.trim()) {
 			try {
 				setIsSending(true);
+
+				if (isGuessing) {
+					// Check if the guess is correct
+					if (fuzzyMatch(message.trim(), currentTrack?.title || '')) {
+						const currentTime = Date.now();
+						const guessData = {
+							currentTime,
+							guess: message.trim(),
+							roomCode,
+							round,
+							timePerSong,
+							userId: user.user.id,
+						};
+
+						setMessage('');
+						await axios.post('/api/game/guess', guessData).catch((error) => {
+							toast({
+								title: 'Failed to submit guess',
+								description:
+									error instanceof Error ? error.message : 'Unknown error',
+								variant: 'destructive',
+								duration: 3000,
+							});
+						});
+						return;
+					}
+				}
+
 				const optimisticMsg: Message = {
 					id: uuidv4(),
 					roomId: roomCode,
@@ -162,7 +173,7 @@ export function ChatBox({
 
 			<ScrollArea className='flex-1 mb-4' ref={scrollAreaRef}>
 				<div className='space-y-4'>
-					{allMessages.map((msg) => {
+					{allMessages.map((msg, index) => {
 						let player: Player | null = null;
 						if (
 							(msg.type === MESSAGE_TYPE.CHAT ||
@@ -171,7 +182,9 @@ export function ChatBox({
 						) {
 							player = userMap.get(msg.user.user.id) || null;
 						}
-						return <MessageRow key={msg.id} msg={msg} player={player} />;
+						return (
+							<MessageRow key={msg.id + index} msg={msg} player={player} />
+						);
 					})}
 				</div>
 			</ScrollArea>
