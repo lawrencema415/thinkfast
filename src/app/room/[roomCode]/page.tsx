@@ -84,7 +84,6 @@ export default function RoomPage() {
 
 	const {
 		currentRound,
-		currentTrack,
 		songs,
 		songsPerPlayer,
 		timePerSong,
@@ -93,7 +92,7 @@ export default function RoomPage() {
 		players,
 		hostId,
 		isPlaying,
-		currentTrackStartedAt,
+		round,
 	} = initialState;
 
 	// Final check before rendering - if user somehow got past the useEffect checks
@@ -130,11 +129,9 @@ export default function RoomPage() {
 			<div>
 				{countdown !== null && <CountdownOverlay countdown={countdown} />}
 				<GamePlayer
-					currentTrack={currentTrack}
-					currentRound={currentRound}
+					round={round}
 					totalRounds={totalRounds}
 					isPlaying={false}
-					currentTrackStartedAt={currentTrackStartedAt}
 					timePerSong={timePerSong}
 				/>
 				<ChatBox
@@ -180,11 +177,9 @@ export default function RoomPage() {
 					</div>
 					<div className='lg:w-2/4'>
 						<GamePlayer
-							currentTrack={currentTrack}
-							currentRound={0}
+							round={round}
 							totalRounds={0}
 							isPlaying={false}
-							currentTrackStartedAt={currentTrackStartedAt}
 							timePerSong={timePerSong}
 						/>
 						<ChatBox

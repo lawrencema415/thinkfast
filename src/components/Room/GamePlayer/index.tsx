@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Song } from '@shared/schema';
+import { Round } from '@shared/schema';
 import { Music2 } from 'lucide-react';
 import { Hint } from './Hint';
 import {
@@ -10,41 +10,45 @@ import {
 } from '@/lib/localStorage';
 
 interface GamePlayerProps {
-    currentTrack: Song | null;
-    currentRound: number;
     totalRounds: number;
     isPlaying: boolean;
-    currentTrackStartedAt: Date | null;
     timePerSong: number;
+    round: Round | null;
 }
 
 export function GamePlayer({
-    currentTrack,
-    currentRound,
     totalRounds,
     isPlaying,
-    currentTrackStartedAt,
     timePerSong,
+    round,
 }: GamePlayerProps) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const volume = getLocalStorage(LOCALSTORAGE_KEYS.VOLUME, 0.5);
     const joinTimeRef = useRef(new Date().getTime());
+
+    const {
+        roundNumber,
+        song,
+        startedAt,
+    } = round ?? {}
+
+    console.log(round, roundNumber, song, startedAt)
     
     // Use state instead of ref for startedAtTime
     const [startedAtTime, setStartedAtTime] = useState(() => 
-        currentTrackStartedAt instanceof Date 
-            ? currentTrackStartedAt.getTime() 
-            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : null
+        startedAt instanceof Date 
+            ? startedAt.getTime() 
+            : startedAt ? new Date(startedAt).getTime() : null
     );
     
     // Update startedAtTime when currentTrackStartedAt changes
     useEffect(() => {
-        const newStartedAtTime = currentTrackStartedAt instanceof Date 
-            ? currentTrackStartedAt.getTime() 
-            : currentTrackStartedAt ? new Date(currentTrackStartedAt).getTime() : null;
+        const newStartedAtTime = startedAt instanceof Date 
+            ? startedAt.getTime() 
+            : startedAt ? new Date(startedAt).getTime() : null;
         
         setStartedAtTime(newStartedAtTime);
-    }, [currentTrackStartedAt, currentTrack]);
+    }, [startedAt, song]);
     
     const [trackRunTime, setTrackRunTime] = useState(0);
     
@@ -55,7 +59,7 @@ export function GamePlayer({
         if (startedAtTime){
             setTrackStartTime(Math.max(0, joinTimeRef.current - startedAtTime));
         }
-    }, [startedAtTime, currentTrack]);
+    }, [startedAtTime, song]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -65,17 +69,17 @@ export function GamePlayer({
             }
         }, 10);
         return () => clearInterval(interval);
-    }, [startedAtTime, currentTrack]);
+    }, [startedAtTime, song]);
 
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
         audio.pause();
-        audio.src = currentTrack?.previewUrl || '';
+        audio.src = song?.previewUrl || '';
         audio.load();
         
         const handleLoadedMetadata = () => {
-            if (currentTrack?.previewUrl) {
+            if (song?.previewUrl) {
                 // song will play the last timePerSong seconds
                 // backend route can add intermission delay to game round
                 audio.currentTime = Math.max(0, audio.duration - timePerSong + trackStartTime / 1000);
@@ -88,7 +92,7 @@ export function GamePlayer({
         return () => {
             audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
         };
-    }, [currentTrack?.previewUrl, isPlaying, timePerSong, trackStartTime]);
+    }, [song?.previewUrl, isPlaying, timePerSong, trackStartTime]);
     
     useEffect(() => {
         const audio = audioRef.current;
@@ -99,7 +103,7 @@ export function GamePlayer({
 	}, [volume, audioRef]);
     
     
-    if (!currentTrack) {
+    if (!song) {
         return (
             <div className='bg-gray-800 rounded-lg p-6 text-center mb-5'>
 				<Music2 className='h-12 w-12 mx-auto mb-4 text-gray-400' />
@@ -114,7 +118,7 @@ export function GamePlayer({
                 <CardTitle className="text-center">
                     <div className='text-center mb-6'>
                         <h2 className='text-xl font-heading font-bold mb-2'>
-                            Song {currentRound} of {totalRounds} playing
+                            Song {roundNumber} of {totalRounds} playing
                         </h2>
                         <p className='text-gray-400'>Guess the song</p>
                     </div>
@@ -122,11 +126,9 @@ export function GamePlayer({
             </CardHeader>
             
             <CardContent>
-                {currentTrack && (
+                {song && roundNumber && (
                     <Hint
-                    currentTrack={currentTrack}
-                    currentRound={currentRound}
-                    totalRounds={totalRounds}
+                    song={song}
                     timePerSong={timePerSong}
                     trackRunTime={trackRunTime}
                     />

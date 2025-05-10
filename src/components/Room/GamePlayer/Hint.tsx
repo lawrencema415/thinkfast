@@ -3,9 +3,7 @@ import Image from 'next/image';
 import { Song } from '@shared/schema';
 
 interface HintProps {
-    currentTrack: Song | null;
-    currentRound: number;
-    totalRounds: number;
+    song: Song | null;
     timePerSong: number;
     trackRunTime: number;
 }
@@ -18,9 +16,7 @@ const INITIAL_BRIGHTNESS = 0.4;
 const MAX_BRIGHTNESS = 1;
 
 export function Hint({
-    currentTrack,
-    currentRound,
-    totalRounds,
+    song,
     timePerSong,
     trackRunTime,
 }: HintProps) {
@@ -30,8 +26,6 @@ export function Hint({
     const [blur, setBlur] = useState(INITIAL_BLUR)
     const [contrast, setContrast] = useState(INITIAL_CONTRAST)
     const [brightness, setBrightness] = useState(INITIAL_BRIGHTNESS)
-
-    console.log('track time', trackRunTime);
 
     useEffect(() => {
         const progress = (Math.max(0, (trackRunTime / (timePerSong*1000)) * 100));
@@ -47,27 +41,27 @@ export function Hint({
         setBrightness(newBrightness);
 
         if (progress > 100) {
-            setShowSongName(currentTrack?.title || '???');
-            setShowArtistName(currentTrack?.artist || '???');
+            setShowSongName(song?.title || '???');
+            setShowArtistName(song?.artist || '???');
         } 
-    }, [trackRunTime, timePerSong, progressPercent, currentTrack]);
+    }, [trackRunTime, timePerSong, progressPercent, song]);
 
 
     // on currentTrack change, reset hint
     useEffect(() => {
-        if (currentTrack) {
+        if (song) {
             setShowSongName('???');
             setShowArtistName('???');
         }
-    }, [currentTrack]);
+    }, [song]);
 
     return (
         <div>
             <div className="flex flex-col items-center gap-4">
-                {currentTrack?.albumArt && (
+                {song?.albumArt && (
                     <div className="w-48 h-48 relative">
                         <Image 
-                            src={currentTrack?.albumArt} 
+                            src={song?.albumArt} 
                             alt="Album art"
                             className="w-full h-full object-cover rounded-md"
                             height={144}
@@ -89,7 +83,6 @@ export function Hint({
                 </div>
                 
                 <div>
-                    <p>Round: {currentRound} / {totalRounds}</p>
                     <p>Track Time: { trackRunTime }s</p>
                 </div>
             </div>
