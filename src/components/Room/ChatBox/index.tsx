@@ -1,13 +1,19 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 import {
+	MESSAGE_TYPE,
 	Message,
 	Player,
-	MESSAGE_TYPE,
-	SystemMessage,
-	Song,
 	Round,
+	Song,
+	SystemMessage,
 } from '@/shared/schema';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -54,7 +60,24 @@ export function ChatBox({
 		isGuessing ? 'guess' : 'chat'
 	);
 
-	// Remove optimistic messages that are now present in server messages
+	const hasGuessed = useMemo(
+		() => round?.guesses.some((g) => g.userId === user.user.id),
+		[round, user.user.id]
+	);
+
+	const userMap = useMemo(() => {
+		const map = new Map<string, Player>();
+		for (const player of users) {
+			if (player.user?.id) map.set(player.user.id, player);
+		}
+		return map;
+	}, [users]);
+
+	const allMessages = useMemo(
+		() => [...messages, ...optimisticMessages],
+		[messages, optimisticMessages]
+	);
+
 	useEffect(() => {
 		setOptimisticMessages((prev) =>
 			prev.filter(
@@ -64,151 +87,155 @@ export function ChatBox({
 		);
 	}, [messages]);
 
-	// Reset guess state on new round
 	useEffect(() => {
 		setUserGuessed(false);
 	}, [round]);
 
-	// Dismiss hint if user types again
 	useEffect(() => {
 		if (message && showHelp) setShowHelp(false);
 	}, [message, showHelp]);
 
-	// Scroll to bottom when new messages arrive
 	useEffect(() => {
-		if (scrollAreaRef.current) {
-			const scrollContainer = scrollAreaRef.current.querySelector(
+		const scrollContainer =
+			scrollAreaRef.current?.querySelector<HTMLDivElement>(
 				'[data-radix-scroll-area-viewport]'
-			) as HTMLDivElement | null;
-			if (scrollContainer) {
-				scrollContainer.scrollTop = scrollContainer.scrollHeight;
-			}
+			);
+		if (scrollContainer) {
+			scrollContainer.scrollTop = scrollContainer.scrollHeight;
 		}
-	}, [messages, optimisticMessages]);
+	}, [allMessages]);
 
-	const hasGuessed = round?.guesses.some(
-		(guess) => guess.userId === user.user.id
-	);
+	const handleSubmit = useCallback(
+		async (e: React.FormEvent) => {
+			e.preventDefault();
+			const trimmed = message.trim();
+			if (!trimmed) return;
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+			const alreadyGuessed = hasGuessed || userGuessed;
 
-		if (hasGuessed || userGuessed) {
-			setMessage('');
-			toast({
-				title: 'You have already guessed the song!',
-				description: 'You can only guess once',
-				variant: 'default',
-				duration: 3000,
-			});
-			return;
-		}
+			if (isGuessing && currentTrack) {
+				if (!alreadyGuessed) {
+					if (fuzzyMatch(trimmed, currentTrack.title)) {
+						setUserGuessed(true);
+						setMessage('');
 
-		const trimmedMessage = message.trim();
-		if (!trimmedMessage) return;
-
-		// --- GUESSING MODE ---
-		if (isGuessing && currentTrack) {
-			// Correct guess: Optimistically update UI, fire-and-forget network call
-			if (fuzzyMatch(trimmedMessage, currentTrack.title)) {
-				setUserGuessed(true);
-				setMessage('');
-
-				axios
-					.post('/api/game/guess', {
-						currentTime: Date.now(),
-						guess: trimmedMessage,
-						roomCode,
-						round,
-						timePerSong,
-						userId: user.user.id,
-					})
-					.catch((error) => {
 						toast({
-							title: 'Failed to submit guess',
-							description:
-								error instanceof Error ? error.message : 'Unknown error',
-							variant: 'destructive',
+							title: 'Correct Guess!',
+							description: `Nice! You guessed "${currentTrack.title}" correctly.`,
+							variant: 'default',
 							duration: 3000,
 						});
-						// Optionally, allow retry or rollback optimistic state
-					});
 
-				return;
-			} else if (isCloseMatch(trimmedMessage, currentTrack.title)) {
-				setMessage('');
-				setShowHelp(true);
+						axios
+							.post('/api/game/guess', {
+								currentTime: Date.now(),
+								guess: trimmed,
+								roomCode,
+								round,
+								timePerSong,
+								userId: user.user.id,
+							})
+							.catch((error) =>
+								toast({
+									title: 'Guess submission failed',
+									description:
+										error instanceof Error ? error.message : 'Unknown error',
+									variant: 'destructive',
+								})
+							);
 
-				return;
+						return;
+					}
+
+					if (isCloseMatch(trimmed, currentTrack.title)) {
+						setMessage('');
+						setShowHelp(true);
+						return;
+					}
+				} else {
+					// User already guessed, block any fuzzy/close matches from sending
+					if (
+						fuzzyMatch(trimmed, currentTrack.title) ||
+						isCloseMatch(trimmed, currentTrack.title)
+					) {
+						setMessage('');
+						toast({
+							title: 'You already guessed!',
+							description: 'Your message was too close to the answer.',
+							variant: 'default',
+							duration: 3000,
+						});
+						return;
+					}
+				}
 			}
-		}
 
-		// --- CHAT OR INCORRECT GUESS ---
-		const optimisticMsg: Message = {
-			id: uuidv4(),
-			roomId: roomCode,
-			displayName: user?.user.user_metadata?.display_name || 'Unknown',
-			avatarUrl: user?.user.user_metadata?.avatarUrl || '',
+			// Allowed to send message (chat or incorrect guess)
+			const optimisticMsg: Message = {
+				id: uuidv4(),
+				roomId: roomCode,
+				displayName: user?.user.user_metadata?.display_name || 'Anonymous',
+				avatarUrl: user?.user.user_metadata?.avatarUrl || '',
+				user,
+				content: trimmed,
+				type: isGuessing ? MESSAGE_TYPE.GUESS : MESSAGE_TYPE.CHAT,
+				createdAt: new Date(),
+			};
+
+			setOptimisticMessages((prev) => [...prev, optimisticMsg]);
+			addMessageToBatch({ content: trimmed, id: optimisticMsg.id });
+			setMessage('');
+		},
+		[
+			message,
+			hasGuessed,
+			userGuessed,
+			toast,
+			isGuessing,
+			currentTrack,
+			roomCode,
+			round,
+			timePerSong,
 			user,
-			content: trimmedMessage,
-			type: isGuessing ? MESSAGE_TYPE.GUESS : MESSAGE_TYPE.CHAT,
-			createdAt: new Date(),
-		};
-		setOptimisticMessages((prev) => [...prev, optimisticMsg]);
-		addMessageToBatch({ content: trimmedMessage, id: optimisticMsg.id });
-		setMessage('');
-	};
-
-	const allMessages = useMemo(
-		() => [...messages, ...optimisticMessages],
-		[messages, optimisticMessages]
+			addMessageToBatch,
+		]
 	);
 
-	const userMap = useMemo(() => {
-		const map = new Map<string, Player>();
-		users.forEach((player) => {
-			if (player.user?.id) {
-				map.set(player.user.id, player);
-			}
-		});
-		return map;
-	}, [users]);
-
 	return (
-		<div className='bg-gray-800 rounded-lg p-4 flex flex-col h-[500px]'>
+		<div className='flex h-[500px] flex-col rounded-lg bg-gray-800 p-4'>
+			{showHelp && <PrivateHintToast hint='You are close!' />}
 			<div className='mb-4'>
-				<h3 className='font-heading font-bold text-lg'>
+				<h3 className='text-lg font-heading font-bold'>
 					{isGuessing ? 'Make your guess!' : 'Chat'}
 				</h3>
 			</div>
-			{showHelp && <PrivateHintToast hint='You are close!' />}
-			<ScrollArea className='flex-1 mb-4' ref={scrollAreaRef}>
+			<ScrollArea className='mb-4 flex-1' ref={scrollAreaRef}>
 				<div className='space-y-4'>
-					{allMessages.map((msg, index) => {
+					{allMessages.map((msg, idx) => {
 						let player: Player | null = null;
+
 						if (
-							(msg.type === MESSAGE_TYPE.CHAT ||
-								msg.type === MESSAGE_TYPE.GUESS) &&
+							'content' in msg &&
+							msg.type !== 'system' &&
 							msg.user?.user?.id
 						) {
 							player = userMap.get(msg.user.user.id) || null;
 						}
-						return (
-							<MessageRow key={msg.id + index} msg={msg} player={player} />
-						);
+
+						return <MessageRow key={msg.id + idx} msg={msg} player={player} />;
 					})}
 				</div>
 			</ScrollArea>
 
 			<form onSubmit={handleSubmit} className='flex space-x-2'>
 				<Input
-					value={message}
+					autoComplete='off'
+					className='flex-1'
 					onChange={(e) => setMessage(e.target.value)}
 					placeholder={isGuessing ? 'Type your guess...' : 'Type a message...'}
-					className='flex-1'
-					autoComplete='off'
+					value={message}
 				/>
-				<Button type='submit'>
+				<Button type='submit' disabled={!message.trim()}>
 					<Send className='h-4 w-4' />
 				</Button>
 			</form>
