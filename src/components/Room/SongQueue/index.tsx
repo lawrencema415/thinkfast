@@ -20,7 +20,7 @@ export function SongQueue({
 		<div className='bg-dark rounded-lg shadow-lg overflow-hidden mb-6'>
 			<div className='flex justify-between items-center p-4 bg-gray-800 border-b border-gray-700'>
 				<h2 className='font-heading text-lg font-semibold'>{SONG_QUEUE_HEADER}</h2>
-				<AddSong roomCode={roomCode} songQueue={[]} userId={userId} />
+				<AddSong roomCode={roomCode} userId={userId} />
 			</div>
 			<div>
 				<AddedSongs songQueue={songQueue} roomCode={roomCode} userId={userId} />
