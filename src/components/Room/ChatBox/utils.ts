@@ -2,27 +2,17 @@
  * Normalize a string for fuzzy matching.
  */
 const normalize = (str: string): string =>
-  str.toLowerCase()
-    .replace(/[^\w\s]/g, '')
-    .replace(/\s+/g, ' ')
+  str
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '') // remove punctuation
+    .replace(/\s+/g, ' ')    // collapse whitespace
     .trim();
 
 /**
- * Basic fuzzy match between guess and answer with optional threshold.
+ * Only return true if the guess matches the answer exactly (ignoring case/punctuation).
  */
-export const fuzzyMatch = (guess: string, answer: string, threshold = 0.8): boolean => {
-  const normalizedGuess = normalize(guess);
-  const normalizedAnswer = normalize(answer);
-
-  if (normalizedGuess === normalizedAnswer) return true;
-
-  if (normalizedAnswer.includes(normalizedGuess) || normalizedGuess.includes(normalizedAnswer)) {
-    const ratio = Math.min(normalizedGuess.length, normalizedAnswer.length) / 
-                  Math.max(normalizedGuess.length, normalizedAnswer.length);
-    return ratio >= threshold;
-  }
-
-  return false;
+export const fuzzyMatch = (guess: string, answer: string): boolean => {
+  return normalize(guess) === normalize(answer);
 };
 
 /**
@@ -54,7 +44,9 @@ const levenshteinDistance = (a: string, b: string): number => {
  * Determine if a guess is close to the correct answer using typo tolerance.
  */
 export const isCloseMatch = (guess: string, answer: string): boolean => {
-  const normalizedGuess = guess.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-  const normalizedAnswer = answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  const normalizedGuess = normalize(guess);
+  const normalizedAnswer = normalize(answer);
+  if (!normalizedGuess || !normalizedAnswer) return false;
+  if (normalizedGuess === normalizedAnswer) return false; // already handled by fuzzyMatch
   return levenshteinDistance(normalizedGuess, normalizedAnswer) <= 2;
 };

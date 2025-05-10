@@ -18,33 +18,34 @@ import { v4 as uuidv4 } from 'uuid';
 import { useBatchSendMessages } from '@/hooks/useBatchSendMessages';
 import { MessageRow } from './MessageRow';
 import axios from 'axios';
-import { fuzzyMatch } from './utils';
+import { fuzzyMatch, isCloseMatch } from './utils';
+import { PrivateHintToast } from '../PrivateHintToast';
 
 interface ChatBoxProps {
-	messages: (Message | SystemMessage)[];
-	users: Player[];
-	user: Player;
-	roomCode: string;
-	isGuessing?: boolean;
 	currentTrack?: Song | null;
+	isGuessing?: boolean;
+	messages: (Message | SystemMessage)[];
+	roomCode: string;
 	round: Round | null;
 	timePerSong: number;
+	user: Player;
+	users: Player[];
 }
 
 export function ChatBox({
+	currentTrack,
+	isGuessing = false,
 	messages,
 	roomCode,
-	users,
-	user,
-	isGuessing = false,
-	currentTrack,
-	timePerSong,
 	round,
+	timePerSong,
+	user,
+	users,
 }: ChatBoxProps) {
 	const [message, setMessage] = useState('');
-	const [isSending, setIsSending] = useState(false);
 	const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([]);
 	const [userGuessed, setUserGuessed] = useState(false);
+	const [showHelp, setShowHelp] = useState(false);
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
 	const { toast } = useToast();
 
@@ -63,9 +64,15 @@ export function ChatBox({
 		);
 	}, [messages]);
 
+	// Reset guess state on new round
 	useEffect(() => {
 		setUserGuessed(false);
 	}, [round]);
+
+	// Dismiss hint if user types again
+	useEffect(() => {
+		if (message && showHelp) setShowHelp(false);
+	}, [message, showHelp]);
 
 	// Scroll to bottom when new messages arrive
 	useEffect(() => {
@@ -97,61 +104,59 @@ export function ChatBox({
 			return;
 		}
 
-		if (message.trim()) {
-			try {
-				setIsSending(true);
+		const trimmedMessage = message.trim();
+		if (!trimmedMessage) return;
 
-				if (isGuessing) {
-					// Check if the guess is correct
-					if (fuzzyMatch(message.trim(), currentTrack?.title || '')) {
-						const currentTime = Date.now();
-						const guessData = {
-							currentTime,
-							guess: message.trim(),
-							roomCode,
-							round,
-							timePerSong,
-							userId: user.user.id,
-						};
-						setUserGuessed(true);
-
-						setMessage('');
-						await axios.post('/api/game/guess', guessData).catch((error) => {
-							toast({
-								title: 'Failed to submit guess',
-								description:
-									error instanceof Error ? error.message : 'Unknown error',
-								variant: 'destructive',
-								duration: 3000,
-							});
-						});
-						return;
-					}
-				}
-
-				const optimisticMsg: Message = {
-					id: uuidv4(),
-					roomId: roomCode,
-					displayName: user?.user.user_metadata?.display_name || 'Unknown',
-					avatarUrl: user?.user.user_metadata?.avatarUrl || '',
-					user,
-					content: message.trim(),
-					type: isGuessing ? MESSAGE_TYPE.GUESS : MESSAGE_TYPE.CHAT,
-					createdAt: new Date(),
-				};
-				setOptimisticMessages((prev) => [...prev, optimisticMsg]);
-				addMessageToBatch({ content: message.trim(), id: optimisticMsg.id });
+		// --- GUESSING MODE ---
+		if (isGuessing && currentTrack) {
+			// Correct guess: Optimistically update UI, fire-and-forget network call
+			if (fuzzyMatch(trimmedMessage, currentTrack.title)) {
+				setUserGuessed(true);
 				setMessage('');
-			} catch (error) {
-				toast({
-					title: 'Failed to send message',
-					description: error instanceof Error ? error.message : 'Unknown error',
-					variant: 'destructive',
-				});
-			} finally {
-				setIsSending(false);
+
+				axios
+					.post('/api/game/guess', {
+						currentTime: Date.now(),
+						guess: trimmedMessage,
+						roomCode,
+						round,
+						timePerSong,
+						userId: user.user.id,
+					})
+					.catch((error) => {
+						toast({
+							title: 'Failed to submit guess',
+							description:
+								error instanceof Error ? error.message : 'Unknown error',
+							variant: 'destructive',
+							duration: 3000,
+						});
+						// Optionally, allow retry or rollback optimistic state
+					});
+
+				return;
+			} else if (isCloseMatch(trimmedMessage, currentTrack.title)) {
+				setMessage('');
+				setShowHelp(true);
+
+				return;
 			}
 		}
+
+		// --- CHAT OR INCORRECT GUESS ---
+		const optimisticMsg: Message = {
+			id: uuidv4(),
+			roomId: roomCode,
+			displayName: user?.user.user_metadata?.display_name || 'Unknown',
+			avatarUrl: user?.user.user_metadata?.avatarUrl || '',
+			user,
+			content: trimmedMessage,
+			type: isGuessing ? MESSAGE_TYPE.GUESS : MESSAGE_TYPE.CHAT,
+			createdAt: new Date(),
+		};
+		setOptimisticMessages((prev) => [...prev, optimisticMsg]);
+		addMessageToBatch({ content: trimmedMessage, id: optimisticMsg.id });
+		setMessage('');
 	};
 
 	const allMessages = useMemo(
@@ -176,7 +181,7 @@ export function ChatBox({
 					{isGuessing ? 'Make your guess!' : 'Chat'}
 				</h3>
 			</div>
-
+			{showHelp && <PrivateHintToast hint='You are close!' />}
 			<ScrollArea className='flex-1 mb-4' ref={scrollAreaRef}>
 				<div className='space-y-4'>
 					{allMessages.map((msg, index) => {
@@ -203,7 +208,7 @@ export function ChatBox({
 					className='flex-1'
 					autoComplete='off'
 				/>
-				<Button type='submit' disabled={!message.trim() || isSending}>
+				<Button type='submit'>
 					<Send className='h-4 w-4' />
 				</Button>
 			</form>
