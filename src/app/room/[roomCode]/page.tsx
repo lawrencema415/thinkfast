@@ -83,7 +83,6 @@ export default function RoomPage() {
 	// TODO: UPDATE MUSICPLAYER PROPS
 
 	const {
-		currentRound,
 		songs,
 		songsPerPlayer,
 		timePerSong,
@@ -101,15 +100,6 @@ export default function RoomPage() {
 		router.push('/');
 		return <LoadingScreen />;
 	}
-
-	// const timeLeft = () => {
-	// 	const now = new Date();
-	// 	const startedAt = currentTrackStartedAt
-	// 		? new Date(currentTrackStartedAt)
-	// 		: null;
-	// 	const timeRemaining = startedAt ? now.getTime() - startedAt.getTime() : 0;
-	// 	return timePerSong - timeRemaining;
-	// };
 
 	const currentUser = players.find((player) => player.user.id === id);
 
@@ -157,7 +147,6 @@ export default function RoomPage() {
 								<RoomInfo
 									room={room}
 									hostUserName={''}
-									currentRound={currentRound}
 									totalRounds={totalRounds}
 									songsPerPlayer={songsPerPlayer}
 									timePerSong={timePerSong}
@@ -193,7 +182,6 @@ export default function RoomPage() {
 					<div className='lg:w-1/4'>
 						<SongQueue
 							songQueue={songs}
-							currentTrackIndex={0}
 							userId={id}
 							roomCode={roomCode}
 						/>
