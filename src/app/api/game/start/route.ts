@@ -14,11 +14,13 @@ function delay(ms: number) {
 function generateHash(text: string, revealPercentage: number): string {
   if (!text) return '';
 
+  const alphanumeric = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
   let hash = '';
   for(let i = 0; i < text.length; i++) {
     const num = Math.random() * 100;
-    if (num > revealPercentage){
-      hash += '$'
+    if (num > revealPercentage && alphanumeric.includes(text[i].toLowerCase())){
+      hash += '_'
     } else {
       hash += text[i];
     }

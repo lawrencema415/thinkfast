@@ -6,6 +6,7 @@ interface HintProps {
     song: Song | null;
     timePerSong: number;
     trackRunTime: number;
+    hash: string;
 }
 
 const INITIAL_BLUR = 100;
@@ -15,13 +16,32 @@ const MAX_CONTRAST = 1;
 const INITIAL_BRIGHTNESS = 0.4;
 const MAX_BRIGHTNESS = 1;
 
+function encodeArtist(artist: string): string {
+    let hint = '';
+    let properNameStart = true;
+    for (let i = 0; i < artist.length; i++) {
+        if (artist[i] === ' ') {
+            hint += ' ';
+            properNameStart = true;
+        } else if (properNameStart) {
+            hint += artist[i];
+            properNameStart = false;
+        } else {
+            hint += '\u00A0'; // Non-breaking space character
+        }
+    }
+
+    return `${hint}`;
+}
+
 export function Hint({
     song,
     timePerSong,
     trackRunTime,
+    hash,
 }: HintProps) {
-    const [showSongName, setShowSongName] = useState('???');
-    const [showArtistName, setShowArtistName] = useState('???');
+    const [showTitle, setShowTitle] = useState('???');
+    const [showArtist, setShowArtist] = useState('???');
     const [progressPercent, setProgressPercent] = useState(0);
     const [blur, setBlur] = useState(INITIAL_BLUR)
     const [contrast, setContrast] = useState(INITIAL_CONTRAST)
@@ -39,19 +59,23 @@ export function Hint({
         
         const newBrightness = INITIAL_BRIGHTNESS + (progressPercent / 100) * (MAX_BRIGHTNESS - INITIAL_BRIGHTNESS);
         setBrightness(newBrightness);
-
-        if (progress > 100) {
-            setShowSongName(song?.title || '???');
-            setShowArtistName(song?.artist || '???');
+        
+        if (progress > 30 && progress < 100) {
+            setShowTitle(hash);
+            setShowArtist(encodeArtist(song?.artist || ''))
+        }
+        
+        if (progress > 100 && progress < 140) {
+            setShowTitle(song?.title || '???');
+            setShowArtist(song?.artist || '???');
         } 
-    }, [trackRunTime, timePerSong, progressPercent, song]);
-
-
-    // on currentTrack change, reset hint
+    }, [trackRunTime, timePerSong, progressPercent, song, hash]);
+    
+    // on song change, reset hint
     useEffect(() => {
         if (song) {
-            setShowSongName('???');
-            setShowArtistName('???');
+            setShowTitle('???');
+            setShowArtist('???');
         }
     }, [song]);
 
@@ -75,10 +99,10 @@ export function Hint({
                 
                 <div className="text-center">
                 <h3 className="text-xl font-bold">
-                        {showSongName}
+                        {showTitle}
                     </h3>
                     <p className="text-gray-500">
-                        {showArtistName}
+                        {showArtist}
                     </p>
                 </div>
                 
