@@ -30,9 +30,8 @@ export function GamePlayer({
         roundNumber,
         song,
         startedAt,
+        hash,
     } = round ?? {}
-
-    console.log(round, roundNumber, song, startedAt)
     
     // Use state instead of ref for startedAtTime
     const [startedAtTime, setStartedAtTime] = useState(() => 
@@ -126,8 +125,9 @@ export function GamePlayer({
             </CardHeader>
             
             <CardContent>
-                {song && roundNumber && (
+                {song && hash && (
                     <Hint
+                    hash={hash}
                     song={song}
                     timePerSong={timePerSong}
                     trackRunTime={trackRunTime}
