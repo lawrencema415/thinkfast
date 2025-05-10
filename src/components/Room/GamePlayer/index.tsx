@@ -10,131 +10,152 @@ import {
 } from '@/lib/localStorage';
 
 interface GamePlayerProps {
-    totalRounds: number;
-    isPlaying: boolean;
-    timePerSong: number;
-    round: Round | null;
+	totalRounds: number;
+	isPlaying: boolean;
+	timePerSong: number;
+	round: Round | null;
+	disabled?: boolean;
 }
 
 export function GamePlayer({
-    totalRounds,
-    isPlaying,
-    timePerSong,
-    round,
+	totalRounds,
+	isPlaying,
+	timePerSong,
+	round,
+	disabled,
 }: GamePlayerProps) {
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const volume = getLocalStorage(LOCALSTORAGE_KEYS.VOLUME, 0.5);
-    const joinTimeRef = useRef(new Date().getTime());
+	const audioRef = useRef<HTMLAudioElement>(null);
+	const volume = getLocalStorage(LOCALSTORAGE_KEYS.VOLUME, 0.5);
 
-    const {
-        roundNumber,
-        song,
-        startedAt,
-        hash,
-    } = round ?? {}
-    
-    // Use state instead of ref for startedAtTime
-    const [startedAtTime, setStartedAtTime] = useState(() => 
-        startedAt instanceof Date 
-            ? startedAt.getTime() 
-            : startedAt ? new Date(startedAt).getTime() : null
-    );
-    
-    // Update startedAtTime when currentTrackStartedAt changes
-    useEffect(() => {
-        const newStartedAtTime = startedAt instanceof Date 
-            ? startedAt.getTime() 
-            : startedAt ? new Date(startedAt).getTime() : null;
-        
-        setStartedAtTime(newStartedAtTime);
-    }, [startedAt, song]);
-    
-    const [trackRunTime, setTrackRunTime] = useState(0);
-    
-    // Calculate track start offset when startedAtTime changes
-    const [trackStartTime, setTrackStartTime] = useState(0);
-    
-    useEffect(() => {
-        if (startedAtTime){
-            setTrackStartTime(Math.max(0, joinTimeRef.current - startedAtTime));
-        }
-    }, [startedAtTime, song]);
+	const { roundNumber, song, startedAt, hash } = round ?? {};
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if(startedAtTime){
-                const now = new Date().getTime();
-                setTrackRunTime(Math.max(0, now - startedAtTime));
-            }
-        }, 10);
-        return () => clearInterval(interval);
-    }, [startedAtTime, song]);
+	const [startedAtTime, setStartedAtTime] = useState<number | null>(() =>
+		startedAt instanceof Date
+			? startedAt.getTime()
+			: startedAt
+			? new Date(startedAt).getTime()
+			: null
+	);
 
-    useEffect(() => {
-        const audio = audioRef.current;
-        if (!audio) return;
-        audio.pause();
-        audio.src = song?.previewUrl || '';
-        audio.load();
-        
-        const handleLoadedMetadata = () => {
-            if (song?.previewUrl) {
-                // song will play the last timePerSong seconds
-                // backend route can add intermission delay to game round
-                audio.currentTime = Math.max(0, audio.duration - timePerSong + trackStartTime / 1000);
-                audio.play();
-            }
-        };
-    
-        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-        
-        return () => {
-            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        };
-    }, [song?.previewUrl, isPlaying, timePerSong, trackStartTime]);
-    
-    useEffect(() => {
-        const audio = audioRef.current;
+	useEffect(() => {
+		const newStartedAtTime =
+			startedAt instanceof Date
+				? startedAt.getTime()
+				: startedAt
+				? new Date(startedAt).getTime()
+				: null;
+
+		setStartedAtTime(newStartedAtTime);
+	}, [startedAt, song]);
+
+	const [trackRunTime, setTrackRunTime] = useState(0);
+
+	useEffect(() => {
+		const interval = setInterval(() => {
+			if (startedAtTime) {
+				const now = Date.now();
+				setTrackRunTime(Math.max(0, now - startedAtTime));
+			}
+		}, 10);
+		return () => clearInterval(interval);
+	}, [startedAtTime, song]);
+
+	useEffect(() => {
+		if (!startedAtTime || !song?.previewUrl || disabled) return;
+
+		const audio = audioRef.current;
+		if (!audio) return;
+
+		audio.pause();
+		audio.src = song.previewUrl;
+		audio.load();
+
+		let stopTimeout: NodeJS.Timeout | null = null;
+
+		const handleLoadedMetadata = () => {
+			const now = Date.now();
+			const elapsed = (now - startedAtTime) / 1000;
+			const remaining = Math.max(0, timePerSong - elapsed);
+
+			if (remaining <= 0) {
+				audio.pause();
+				return;
+			}
+
+			let playFrom = Math.max(0, audio.duration - timePerSong + elapsed);
+			if (playFrom > audio.duration - 0.2) {
+				playFrom = Math.max(0, audio.duration - 0.2);
+			}
+			audio.currentTime = playFrom;
+		};
+
+		const handleCanPlay = () => {
+			const now = Date.now();
+			const elapsed = (now - startedAtTime) / 1000;
+			const remaining = Math.max(0, timePerSong - elapsed);
+
+			if (remaining <= 0) {
+				audio.pause();
+				return;
+			}
+
+			audio.play().catch(() => {});
+			stopTimeout = setTimeout(() => {
+				audio.pause();
+			}, remaining * 1000);
+		};
+
+		audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+		audio.addEventListener('canplay', handleCanPlay);
+
+		return () => {
+			audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+			audio.removeEventListener('canplay', handleCanPlay);
+			if (stopTimeout) clearTimeout(stopTimeout);
+		};
+	}, [song?.previewUrl, isPlaying, timePerSong, startedAtTime, disabled]);
+
+	useEffect(() => {
+		const audio = audioRef.current;
 		if (audio) {
-            audio.volume = volume;
+			audio.volume = volume;
 		}
 		setLocalStorage(LOCALSTORAGE_KEYS.VOLUME, volume);
 	}, [volume, audioRef]);
-    
-    
-    if (!song) {
-        return (
-            <div className='bg-gray-800 rounded-lg p-6 text-center mb-5'>
+
+	if (!song || disabled) {
+		return (
+			<div className='bg-gray-800 rounded-lg p-6 text-center mb-5'>
 				<Music2 className='h-12 w-12 mx-auto mb-4 text-gray-400' />
 				<p className='text-gray-300'>Waiting for game to start...</p>
 			</div>
 		);
 	}
 
-    return (
-        <Card className="w-full max-w-3xl mx-auto">
-            <CardHeader>
-                <CardTitle className="text-center">
-                    <div className='text-center mb-6'>
-                        <h2 className='text-xl font-heading font-bold mb-2'>
-                            Song {roundNumber} of {totalRounds} playing
-                        </h2>
-                        <p className='text-gray-400'>Guess the song</p>
-                    </div>
-                </CardTitle>
-            </CardHeader>
-            
-            <CardContent>
-                {song && hash && (
-                    <Hint
-                    hash={hash}
-                    song={song}
-                    timePerSong={timePerSong}
-                    trackRunTime={trackRunTime}
-                    />
-                )}
-                <audio ref={audioRef} />
-            </CardContent>
-        </Card>
-    );
+	return (
+		<Card className='w-full max-w-3xl mx-auto'>
+			<CardHeader>
+				<CardTitle className='text-center'>
+					<div className='text-center mb-6'>
+						<h2 className='text-xl font-heading font-bold mb-2'>
+							Song {roundNumber} of {totalRounds} playing
+						</h2>
+						<p className='text-gray-400'>Guess the song</p>
+					</div>
+				</CardTitle>
+			</CardHeader>
+
+			<CardContent>
+				{song && hash && (
+					<Hint
+						hash={hash}
+						song={song}
+						timePerSong={timePerSong}
+						trackRunTime={trackRunTime}
+					/>
+				)}
+				<audio ref={audioRef} />
+			</CardContent>
+		</Card>
+	);
 }

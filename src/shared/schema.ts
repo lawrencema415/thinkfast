@@ -97,6 +97,7 @@ export const gameStateSchema = z.object({
   room: roomSchema,
   songs: z.array(songSchema),
   round: roundSchema.nullable(), 
+  nextRound: roundSchema.nullable(),
   songsPerPlayer: z.number(),
   timePerSong: z.number(),
   totalRounds: z.number(),

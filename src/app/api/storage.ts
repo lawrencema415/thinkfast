@@ -107,6 +107,7 @@ export class RedisStorage {
       timePerSong: options.timePerSong,
       totalRounds: 0,
       round: null,
+      nextRound: null,
       countDown: false,
     };
 

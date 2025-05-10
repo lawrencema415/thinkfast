@@ -100,11 +100,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['/api/game/state'] });
-			toast({
-				title: 'Left room',
-				description: 'You have left the game room',
-				duration: 2000,
-			});
 		},
 		onError: (error: Error) => {
 			toast({
