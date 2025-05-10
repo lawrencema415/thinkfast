@@ -16,14 +16,14 @@ export default function StartGameButton({
 }: Props) {
 	const { startGameMutation } = useGame();
 
-	const handleLeaveRoom = () => {
+	const handleStartGame = () => {
 		startGameMutation.mutate({ roomCode, songsPerPlayer, timePerSong });
 	};
 
 	return (
 		<Button
 			className='w-full'
-			onClick={handleLeaveRoom}
+			onClick={handleStartGame}
 			disabled={startGameMutation.isPending || disabled}
 		>
 			{startGameMutation.isPending ? 'Starting...' : 'Start'}

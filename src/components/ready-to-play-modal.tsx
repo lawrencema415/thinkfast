@@ -12,6 +12,7 @@ import { Users, Clock } from 'lucide-react';
 import { useGame } from '@/hooks/useGame';
 import { useRouter } from 'next/navigation';
 import { GameState } from '@/shared/schema';
+import { queryClient } from '@/lib/queryClient';
 
 interface ReadyToPlayModalProps {
 	isOpen: boolean;
@@ -38,23 +39,21 @@ export function ReadyToPlayModal({
 			{
 				onSuccess: (gameState: GameState) => {
 					onOpenChange(false);
-					setTimeout(() => {
-						router.push(`/room/${gameState.room.code}`);
-					}, 150);
+					// Pre-populate cache for the new room
+					queryClient.setQueryData(
+						['/api/game/state', gameState.room.code],
+						gameState
+					);
+					router.push(`/room/${gameState.room.code}`);
 				},
 			}
 		);
 	};
 
 	const handleJoinRoom = () => {
-		joinRoomMutation.mutate(roomCode, {
-			onSuccess: () => {
-				onOpenChange(false);
-				setTimeout(() => {
-					router.push(`/room/${roomCode}`);
-				}, 150);
-			},
-		});
+		onOpenChange(false);
+		router.push(`/room/${roomCode}?joining=1`);
+		joinRoomMutation.mutate(roomCode);
 	};
 
 	// auto fill room code from clipboard

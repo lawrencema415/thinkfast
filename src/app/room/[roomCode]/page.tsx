@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useToast } from '@/hooks/useToast';
 import { useSSE } from '@/hooks/useSSE';
@@ -32,6 +32,8 @@ export default function RoomPage() {
 	const { loading, user } = useAuth();
 	const countdownAudioRef = useRef<HTMLAudioElement | null>(null);
 	const handleError = useAxiosErrorHandler();
+	const searchParams = useSearchParams();
+	const isJoining = searchParams.get('joining') === '1';
 
 	useEffect(() => {
 		const init = async () => {
@@ -48,6 +50,14 @@ export default function RoomPage() {
 
 				setInitialState(gameState);
 				setInitialMessages(messages);
+				const isUserInRoom = gameState.players.some(
+					(player) => player.user.id === user.id
+				);
+				if (isUserInRoom && isJoining) {
+					const url = new URL(window.location.href);
+					url.searchParams.delete('joining');
+					router.replace(url.pathname + url.search);
+				}
 			} catch (error) {
 				router.push('/');
 				handleError(error, 'Failed to fetch game state or messages');
@@ -55,7 +65,7 @@ export default function RoomPage() {
 		};
 
 		init();
-	}, [handleError, roomCode, router, toast, user, gameState]);
+	}, [handleError, roomCode, router, toast, user, gameState, isJoining]);
 
 	// Countdown effect
 	useEffect(() => {
@@ -108,8 +118,13 @@ export default function RoomPage() {
 	// Final check before rendering - if user somehow got past the useEffect checks
 	const isUserInRoom = players.some((player) => player.user.id === user.id);
 	if (!isUserInRoom) {
-		router.push('/');
-		return <LoadingScreen />;
+		if (isJoining) {
+			// Show spinner, don't redirect
+			return <LoadingScreen />;
+		} else {
+			router.push('/');
+			return <LoadingScreen />;
+		}
 	}
 
 	const currentUser = players.find((player) => player.user.id === id);

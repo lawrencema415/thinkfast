@@ -5,7 +5,6 @@ import { useMutation, UseMutationResult } from '@tanstack/react-query';
 import { useToast } from '@/hooks/useToast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import type { GameState, Room, Song } from '../shared/schema';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 type GameContextType = {
@@ -35,7 +34,6 @@ const GameContext = createContext<GameContextType | null>(null);
 export function GameProvider({ children }: { children: ReactNode }) {
 	const { toast } = useToast();
 	const { user } = useAuth();
-	const router = useRouter();
 
 	// Mutation to create a new room
 	const createRoomMutation = useMutation<
@@ -107,7 +105,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
 				description: 'You have left the game room',
 				duration: 2000,
 			});
-			router.push('/');
 		},
 		onError: (error: Error) => {
 			toast({
