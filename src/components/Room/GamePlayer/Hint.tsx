@@ -20,17 +20,18 @@ function encodeArtist(artist: string): string {
     let hint = '';
     let properNameStart = true;
     for (let i = 0; i < artist.length; i++) {
-        if (properNameStart){
-            hint += artist[i]
-            properNameStart = false;
-        };
-
-        if (artist[i] === ' '){
+        if (artist[i] === ' ') {
+            hint += ' ';
             properNameStart = true;
-        };
-    };
+        } else if (properNameStart) {
+            hint += artist[i];
+            properNameStart = false;
+        } else {
+            hint += '\u00A0'; // Non-breaking space character
+        }
+    }
 
-    return hint;
+    return `${hint}`;
 }
 
 export function Hint({
@@ -41,19 +42,10 @@ export function Hint({
 }: HintProps) {
     const [showTitle, setShowTitle] = useState('???');
     const [showArtist, setShowArtist] = useState('???');
-    // const [artistHint, setArtistHint] = useState('');
     const [progressPercent, setProgressPercent] = useState(0);
     const [blur, setBlur] = useState(INITIAL_BLUR)
     const [contrast, setContrast] = useState(INITIAL_CONTRAST)
     const [brightness, setBrightness] = useState(INITIAL_BRIGHTNESS)
-
-    // on roundNumber change, reset hint
-    // useEffect(() => {
-    //     if (song) {
-    //         setShowTitle('???');
-    //         setShowArtist('???');
-    //     }
-    // }, [song, progressPercent]);
 
     useEffect(() => {
         const progress = (Math.max(0, (trackRunTime / (timePerSong*1000)) * 100));
@@ -67,23 +59,25 @@ export function Hint({
         
         const newBrightness = INITIAL_BRIGHTNESS + (progressPercent / 100) * (MAX_BRIGHTNESS - INITIAL_BRIGHTNESS);
         setBrightness(newBrightness);
-
-        if (progress < 5) {
-            setShowTitle('???');
-            setShowArtist('???');
-        }
-
+        
         if (progress > 30 && progress < 100) {
             setShowTitle(hash);
             setShowArtist(encodeArtist(song?.artist || ''))
         }
-
-        if (progress > 100) {
+        
+        if (progress > 100 && progress < 140) {
             setShowTitle(song?.title || '???');
             setShowArtist(song?.artist || '???');
         } 
     }, [trackRunTime, timePerSong, progressPercent, song, hash]);
-
+    
+    // on song change, reset hint
+    useEffect(() => {
+        if (song) {
+            setShowTitle('???');
+            setShowArtist('???');
+        }
+    }, [song]);
 
     return (
         <div>
