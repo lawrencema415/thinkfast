@@ -125,26 +125,67 @@ export default function RoomPage() {
 		return;
 	}
 
-	if (isPlaying) {
+	const currentTrack = round?.song;
+
+	const renderGame = () => {
 		return (
 			<div>
-				{countdown !== null && <CountdownOverlay countdown={countdown} />}
 				<GamePlayer
 					round={round}
 					totalRounds={totalRounds}
 					isPlaying={false}
 					timePerSong={timePerSong}
 				/>
-				<ChatBox
-					messages={initialMessages || []}
-					roomCode={roomCode}
-					user={currentUser}
-					users={gameState?.players || []}
-					isGuessing={true}
-				/>
+				{!isPlaying && (
+					<ChatBox
+						currentTrack={currentTrack}
+						isGuessing={true}
+						messages={initialMessages || []}
+						roomCode={roomCode}
+						user={currentUser}
+						users={gameState?.players || []}
+						round={round}
+						timePerSong={timePerSong}
+					/>
+				)}
 			</div>
 		);
-	}
+	};
+
+	const roomInfo = () => {
+		if (isPlaying && currentTrack) {
+			return (
+				<PlayerList
+					players={players || []}
+					hostId={hostId}
+					songsPerPlayer={songsPerPlayer}
+					userId={user.id}
+					roomCode={roomCode}
+				/>
+			);
+		}
+		return (
+			<>
+				<RoomInfo
+					room={room}
+					hostUserName={''}
+					totalRounds={totalRounds}
+					songsPerPlayer={songsPerPlayer}
+					timePerSong={timePerSong}
+					hostId={hostId}
+					userId={user.id}
+					songs={songs}
+				/>
+				<PlayerList
+					players={players || []}
+					hostId={hostId}
+					songsPerPlayer={songsPerPlayer}
+					userId={user.id}
+					roomCode={roomCode}
+				/>
+			</>
+		);
+	};
 
 	return (
 		<div className='min-h-screen flex flex-col'>
@@ -152,46 +193,22 @@ export default function RoomPage() {
 			{countdown !== null && <CountdownOverlay countdown={countdown} />}
 			<main className='flex-1 container mx-auto px-4 py-6'>
 				<div className='flex flex-col lg:flex-row gap-6'>
+					<div className='lg:w-1/4'>{initialState && roomInfo()}</div>
+					<div className='lg:w-2/4'>{renderGame()}</div>
 					<div className='lg:w-1/4'>
-						{initialState && (
-							<>
-								<RoomInfo
-									room={room}
-									hostUserName={''}
-									totalRounds={totalRounds}
-									songsPerPlayer={songsPerPlayer}
-									timePerSong={timePerSong}
-									hostId={hostId}
-									userId={user.id}
-									songs={songs}
-								/>
-								<PlayerList
-									players={players || []}
-									hostId={hostId}
-									songsPerPlayer={songsPerPlayer}
-									userId={user.id}
-									roomCode={roomCode}
-								/>
-							</>
+						{isPlaying ? (
+							<ChatBox
+								messages={initialMessages || []}
+								timePerSong={timePerSong}
+								roomCode={roomCode}
+								user={currentUser}
+								users={gameState?.players || []}
+								isGuessing={false}
+								round={round}
+							/>
+						) : (
+							<SongQueue songQueue={songs} userId={id} roomCode={roomCode} />
 						)}
-					</div>
-					<div className='lg:w-2/4'>
-						<GamePlayer
-							round={round}
-							totalRounds={0}
-							isPlaying={false}
-							timePerSong={timePerSong}
-						/>
-						<ChatBox
-							messages={initialMessages || []}
-							roomCode={roomCode}
-							user={currentUser}
-							users={gameState?.players || []}
-							isGuessing={false}
-						/>
-					</div>
-					<div className='lg:w-1/4'>
-						<SongQueue songQueue={songs} userId={id} roomCode={roomCode} />
 					</div>
 				</div>
 			</main>
