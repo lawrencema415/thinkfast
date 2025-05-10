@@ -9,7 +9,6 @@ import StartGameButton from './StartGame';
 interface RoomInfoProps {
 	room: Room;
 	hostUserName: string;
-	currentRound: number;
 	totalRounds: number;
 	songsPerPlayer: number;
 	timePerSong: number;
@@ -22,7 +21,6 @@ interface RoomInfoProps {
 export function RoomInfo({
 	room,
 	hostUserName,
-	currentRound,
 	totalRounds,
 	songsPerPlayer,
 	timePerSong,
@@ -94,7 +92,7 @@ export function RoomInfo({
 					<span className='text-gray-300'>Round:</span>
 					{isPlaying && (
 						<span className='font-medium'>
-							{currentRound}/{totalRounds}
+							{totalRounds}
 						</span>
 					)}
 				</div>

@@ -4,7 +4,6 @@ import { AddedSongs } from './AddedSongs';
 
 interface SongQueueProps {
 	songQueue: Song[];
-	currentTrackIndex: number;
 	userId: string;
 	roomCode: string;
 }

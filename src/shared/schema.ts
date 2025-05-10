@@ -68,10 +68,12 @@ export const systemMessageSchema = z.object({
   createdAt: z.string().transform(val => new Date(val))
 });
 
-const roundSchema = z.object({
+export const roundSchema = z.object({
+  id: z.string(),
   roundNumber: z.number(),
   song: songSchema,
   startedAt: z.date(),
+  hash: z.string(),
   endedAt: z.date().optional(),
   guesses: z.array(
     z.object({
@@ -88,18 +90,13 @@ const roundSchema = z.object({
 export const gameStateSchema = z.object({
   id: z.string(),
   createdAt: z.date(),
-  currentRound: z.number(),
-  currentTrack: songSchema.nullable(),
-  currentTrackStartedAt: z.date().nullable(),
-  currentTrackHint: z.string(),
   hostId: z.string(),
   isActive: z.boolean(),
   isPlaying: z.boolean(),
   players: z.array(playerSchema),
   room: roomSchema,
   songs: z.array(songSchema),
-  playedSongIds: z.array(z.string()), 
-  rounds: z.array(roundSchema), 
+  round: roundSchema.nullable(), 
   songsPerPlayer: z.number(),
   timePerSong: z.number(),
   totalRounds: z.number(),
@@ -116,6 +113,7 @@ export const updateGameSchema = z.object({
 export type Player = z.infer<typeof playerSchema>;
 export type Room = z.infer<typeof roomSchema>;
 export type Song = z.infer<typeof songSchema>;
+export type Round = z.infer<typeof roundSchema>;
 export type Message = z.infer<typeof messageSchema>;
 export type SystemMessage = z.infer<typeof systemMessageSchema>;
 export type GameState = z.infer<typeof gameStateSchema>;

@@ -2,12 +2,29 @@ import { NextResponse } from 'next/server';
 import { storage } from '../../storage';
 import { verifyAuthInRouteHandler } from '@/lib/auth';
 import { broadcastGameState } from '@/lib/broadcast';
-import { Player, Song } from '@/shared/schema';
+import { Player, Song, Round } from '@/shared/schema';
 
 const ADDED_TIME_TO_ROUND = 3000;
+const REVEAL_PERCENTAGE = 20;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function generateHash(text: string, revealPercentage: number): string {
+  if (!text) return '';
+
+  let hash = '';
+  for(let i = 0; i < text.length; i++) {
+    const num = Math.random() * 100;
+    if (num > revealPercentage){
+      hash += '$'
+    } else {
+      hash += text[i];
+    }
+  }
+
+  return hash;
 }
 
 export async function POST(req: Request) {
@@ -45,10 +62,6 @@ export async function POST(req: Request) {
   // Start countdown
   gameState.countDown = true;
   gameState.isPlaying = false;
-  gameState.currentRound = 0;
-  gameState.currentTrack = null;
-  gameState.currentTrackStartedAt = null;
-  gameState.rounds = [];
   gameState.totalRounds = totalRounds;
   await storage.saveGameState(roomId, gameState);
   await broadcastGameState(roomCode, storage);
@@ -68,17 +81,25 @@ async function startGameRounds(
   timePerSong: number,
   songs: Song[]
 ) {
-  let round = 1;
+  let index = 1;
   for (let i = 0; i < songs.length; i++) {
     // Set up round
     let gameState = await storage.getGameStateByRoomCode(roomCode);
     if (!gameState) return;
 
+    const round: Round = {
+      id: crypto.randomUUID(),
+      roundNumber: index,
+      song: songs[i],
+      startedAt: new Date(),
+      hash: generateHash(songs[i].title, REVEAL_PERCENTAGE),
+      guesses: [],
+      winnerId: null
+    }
+
     gameState.countDown = false;
     gameState.isPlaying = true;
-    gameState.currentRound = round;
-    gameState.currentTrack = songs[i];
-    gameState.currentTrackStartedAt = new Date();
+    gameState.round = round
     await storage.saveGameState(roomId, gameState);
     await broadcastGameState(roomCode, storage);
 
@@ -92,11 +113,8 @@ async function startGameRounds(
       if (!gameState) return;
       gameState.isPlaying = false;
       gameState.countDown = false;
-      gameState.currentTrack = null;
-      gameState.currentTrackStartedAt = null;
-      gameState.currentRound = 0;
-      // gameState.songs = []; 
-      gameState.rounds = [];
+      // gameState.songs = []; // TURNED OFF FOR DEV, DONT WANT TO REFETCH
+      gameState.round = null;
       await storage.saveGameState(roomId, gameState);
       await broadcastGameState(roomCode, storage);
       return;
@@ -111,6 +129,6 @@ async function startGameRounds(
 
     await delay(3000); // 3s interval
 
-    round++;
+    index++;
   }
 }
