@@ -83,9 +83,6 @@ async function startGameRounds(
     gameState.countDown = false;
     gameState.isPlaying = true;
     gameState.round = round
-    gameState.currentRound = index;
-    gameState.currentTrack = songs[i];
-    gameState.currentTrackStartedAt = new Date();
     await storage.saveGameState(roomId, gameState);
     await broadcastGameState(roomCode, storage);
 
@@ -99,9 +96,6 @@ async function startGameRounds(
       if (!gameState) return;
       gameState.isPlaying = false;
       gameState.countDown = false;
-      gameState.currentTrack = null;
-      gameState.currentTrackStartedAt = null;
-      gameState.currentRound = 0;
       // gameState.songs = []; // TURNED OFF FOR DEV, DONT WANT TO REFETCH
       gameState.round = null;
       await storage.saveGameState(roomId, gameState);

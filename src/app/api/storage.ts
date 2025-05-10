@@ -86,9 +86,6 @@ export class RedisStorage {
     const gameState: GameState = {
       id,
       createdAt,
-      currentRound: 0,
-      currentTrack: null,
-      currentTrackHint: '',
       hostId: user.id,
       isActive: true,
       isPlaying: false,
@@ -104,10 +101,8 @@ export class RedisStorage {
       songsPerPlayer: options.songsPerPlayer,
       timePerSong: options.timePerSong,
       totalRounds: 0,
-      // playedSongIds: [],
       round: null,
       countDown: false,
-      currentTrackStartedAt: null,
     };
 
     await redis.pipeline()
