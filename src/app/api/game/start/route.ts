@@ -5,9 +5,26 @@ import { broadcastGameState } from '@/lib/broadcast';
 import { Player, Song, Round } from '@/shared/schema';
 
 const ADDED_TIME_TO_ROUND = 3000;
+const REVEAL_PERCENTAGE = 20;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function generateHash(text: string, revealPercentage: number): string {
+  if (!text) return '';
+
+  let hash = '';
+  for(let i = 0; i < text.length; i++) {
+    const num = Math.random() * 100;
+    if (num > revealPercentage){
+      hash += '$'
+    } else {
+      hash += text[i];
+    }
+  }
+
+  return hash;
 }
 
 export async function POST(req: Request) {
@@ -75,7 +92,7 @@ async function startGameRounds(
       roundNumber: index,
       song: songs[i],
       startedAt: new Date(),
-      hint: '',
+      hash: generateHash(songs[i].title, REVEAL_PERCENTAGE),
       guesses: [],
       winnerId: null
     }

@@ -73,7 +73,7 @@ export const roundSchema = z.object({
   roundNumber: z.number(),
   song: songSchema,
   startedAt: z.date(),
-  hint: z.string(),
+  hash: z.string(),
   endedAt: z.date().optional(),
   guesses: z.array(
     z.object({
